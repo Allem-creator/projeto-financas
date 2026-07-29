@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agenda & Receitas</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background: radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 32%), radial-gradient(circle at top right, rgba(139,92,246,0.12), transparent 30%), #05050a; color: #f8fafc; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 42px 42px; mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 78%); z-index: -1; }
+        
+        .glass-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); transition: all 0.3s ease; }
+        .glass-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); border-color: rgba(255, 255, 255, 0.1); }
+        .app-shell { max-width: 1480px; margin: 0 auto; }
+        .hero-panel { position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); background: linear-gradient(135deg, rgba(15,23,42,0.76), rgba(2,6,23,0.45)); border-radius: 24px; padding: 18px; box-shadow: 0 18px 60px rgba(0,0,0,0.22); }
+        .hero-panel::after { content: ''; position: absolute; right: -80px; top: -120px; width: 260px; height: 260px; border-radius: 999px; background: rgba(59,130,246,0.16); filter: blur(14px); animation: floatOrb 8s ease-in-out infinite; pointer-events: none; }
+        .btn-primary { background: linear-gradient(135deg, #2563eb, #7c3aed); border: 1px solid rgba(147,197,253,0.35); box-shadow: 0 14px 35px rgba(37,99,235,0.25); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124,58,237,0.28); }
+        .mini-action { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: #cbd5e1; border-radius: 12px; padding: 10px 12px; font-weight: 800; transition: all .2s ease; }
+        .mini-action:hover { background: rgba(59,130,246,0.14); color: #fff; border-color: rgba(96,165,250,0.35); transform: translateY(-1px); }
+        .filter-bar { background: rgba(15,23,42,0.78); border: 1px solid rgba(148,163,184,0.14); border-radius: 18px; padding: 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+        .search-field { min-width: 220px; background: rgba(15,23,42,0.78); border: 1px solid rgba(148,163,184,0.18); }
+        .kpi-card { position: relative; overflow: hidden; isolation: isolate; }
+        .kpi-card::after { content: ''; position: absolute; inset: auto -40px -70px auto; width: 140px; height: 140px; border-radius: 999px; background: currentColor; opacity: .08; filter: blur(4px); z-index: -1; transition: transform .25s ease; }
+        .kpi-card:hover::after { transform: scale(1.22); }
+        .chart-card { position: relative; overflow: hidden; }
+        .chart-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, rgba(59,130,246,0.85), rgba(16,185,129,0.75), rgba(139,92,246,0.75)); opacity: .55; }
+        .chart-card h3 { position: relative; }
+        .chart-card h3::after { content: ''; position: absolute; left: 0; bottom: -9px; width: 44px; height: 2px; border-radius: 99px; background: rgba(96,165,250,0.55); }
+        .agenda-item { animation: listIn .35s ease both; animation-delay: var(--delay, 0ms); background: rgba(255,255,255,0.018); }
+        .agenda-item:hover { background: rgba(255,255,255,0.055); box-shadow: 0 12px 30px rgba(0,0,0,0.18); }
+        .status-pill { transition: transform .18s ease, box-shadow .18s ease, filter .18s ease; }
+        .status-pill:hover { filter: brightness(1.12); }
+        .loading-shimmer { position: relative; overflow: hidden; background: rgba(255,255,255,0.035); border-radius: 18px; min-height: 92px; }
+        .loading-shimmer::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); animation: shimmer 1.1s infinite; }
+
+        .text-neon { color: #deff9a; }
+        .border-neon { border-left-color: #deff9a; }
+        
+        .status-agendado { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .status-concluido { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .status-pago { background: rgba(16, 185, 129, 0.4); color: #10b981; border: 1px solid #10b981; font-weight: 800;}
+        .status-cancelado { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        
+        .credit-card { cursor: pointer; position: relative; overflow: hidden; transition: all 0.2s ease; }
+        .credit-card:active { transform: scale(0.97); }
+        .credit-card::before { content: ''; position: absolute; top: -40px; right: -40px; width: 100px; height: 100px; background: rgba(255,255,255,0.05); border-radius: 50%; z-index: 0; pointer-events: none; }
+        .brand-business { background: linear-gradient(135deg, #064e3b 0%, #022c22 100%); border: 1px solid #10b981; }
+
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.875rem; }
+        th { background-color: rgba(255,255,255,0.05); padding: 12px 14px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+        td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #cbd5e1; }
+        tr:hover td { background-color: rgba(255,255,255,0.02); }
+
+        .card-conflito { border-color: rgba(239, 68, 68, 0.5) !important; background: rgba(239, 68, 68, 0.05); }
+        .agenda-date-box { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 1px solid #334155; }
+        .agenda-date-box-periodo { width: 86px !important; border-color: rgba(96, 165, 250, 0.6); background: linear-gradient(135deg, rgba(30, 64, 175, 0.55) 0%, rgba(15, 23, 42, 1) 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 24px rgba(37, 99, 235, 0.18); }
+        .agenda-date-range { letter-spacing: -0.04em; white-space: nowrap; }
+        .agenda-date-box-periodo .agenda-date-range { font-size: 15px; line-height: 1; }
+        .agenda-date-box-periodo .tracking-widest { letter-spacing: .12em; }
+        .agenda-period-chip { margin-top: 4px; padding: 1px 6px; border-radius: 999px; background: rgba(96, 165, 250, 0.14); color: #bfdbfe; border: 1px solid rgba(96, 165, 250, 0.22); font-size: 8px; line-height: 1.2; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+        .date-form-card { background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95)); border: 1px solid rgba(148,163,184,0.2); border-radius: 14px; padding: 12px; transition: all .2s ease; }
+        .date-form-card:focus-within { border-color: rgba(96,165,250,0.85); box-shadow: 0 0 0 3px rgba(59,130,246,0.12); transform: translateY(-1px); }
+        .date-form-card input { background: transparent; border: none; padding: 4px 0 0; border-radius: 0; }
+        .date-form-icon { width: 34px; height: 34px; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: rgba(59,130,246,0.14); color: #93c5fd; border: 1px solid rgba(96,165,250,0.25); }
+        .period-summary { display: none; border: 1px solid rgba(96,165,250,0.22); background: rgba(59,130,246,0.08); color: #bfdbfe; border-radius: 12px; padding: 10px 12px; font-size: 12px; font-weight: 700; }
+        .period-summary.active { display: flex; }
+        
+        select, input { background-color: #1e293b; color: #f8fafc; border: 1px solid #475569; padding: 10px 16px; border-radius: 8px; outline: none; font-weight: 600; width: 100%; }
+        select option { background-color: #0f172a; color: #f8fafc; font-weight: 500; }
+        select:focus, input:focus { border-color: #3b82f6; }
+        
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes listIn { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+        @keyframes floatOrb { 0%, 100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-16px,18px,0) scale(1.08); } }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+        }
+        .animate-fade-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .delay-100 { animation-delay: 0.1s; } .delay-200 { animation-delay: 0.2s; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+        .modal-active { display: flex !important; animation: fadeIn 0.2s ease forwards; }
+        .modal-content-active { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(50px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+<div class="app-shell">
+
+  <!-- INÍCIO DA BARRA DE NAVEGAÇÃO - EVENTOS -->
+    <nav class="flex justify-between items-center mb-6 border-b border-white/10 pb-4 animate-fade-in">
+        <div class="flex items-center gap-4 md:gap-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#8b5cf6] to-[#3b82f6] flex items-center justify-center text-white font-bold text-xl shadow-[0_0_15px_rgba(139,92,246,0.4)]">
+                    <i class="fa-solid fa-calendar-check"></i>
+                </div>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white hidden sm:block">Eventos</h1>
+            </div>
+
+            <div class="flex bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto max-w-[60vw] md:max-w-none custom-scrollbar">
+                <a href="financeiro.html" class="px-3 py-2 md:px-4 rounded-lg text-sm font-bold transition-all text-slate-400 hover:text-white hover:bg-white/10 flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie"></i> <span class="hidden sm:inline">Visão Geral</span>
+                </a>
+                <a href="index.html" class="px-3 py-2 md:px-4 rounded-lg text-sm font-bold transition-all bg-blue-500/20 text-blue-300 border border-blue-500/30 flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-calendar-check"></i> <span class="hidden sm:inline">Eventos</span>
+                </a>
+                <a href="gastos.html" class="px-3 py-2 md:px-4 rounded-lg text-sm font-bold transition-all text-slate-400 hover:text-white hover:bg-white/10 flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-receipt"></i> <span class="hidden sm:inline">Gastos</span>
+                </a>
+            </div>
+        </div>
+        
+        <button onclick="abrirModalForm()" class="btn-primary text-white px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm md:text-base shrink-0">
+            <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Novo Evento</span>
+        </button>
+    </nav>
+    <!-- FIM DA BARRA DE NAVEGAÇÃO -->
+
+    <header class="hero-panel mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 animate-fade-in delay-100">
+        <div class="relative z-10">
+            <p class="text-[10px] md:text-xs text-blue-300 font-black uppercase tracking-[0.3em] mb-2"><i class="fa-solid fa-sparkles mr-2"></i>Central inteligente</p>
+            <h2 class="text-2xl md:text-5xl font-black tracking-tight mb-2 bg-gradient-to-r from-white via-blue-100 to-blue-300 bg-clip-text text-transparent">Painel de Eventos</h2>
+            <p class="text-slate-400 font-medium text-sm md:text-base">Controle de agenda, status e projeção de faturamento em tempo real.</p>
+        </div>
+        <div class="filter-bar relative z-10 w-full lg:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <label class="relative flex-1 sm:w-72">
+                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
+                <input id="filtroBusca" oninput="aplicarFiltro()" class="search-field pl-10 pr-4 py-3 rounded-xl text-sm" type="search" placeholder="Buscar evento ou cliente...">
+            </label>
+            <div class="flex items-center gap-2">
+                <div class="pl-2 text-slate-400"><i class="fa-regular fa-calendar-days text-lg"></i></div>
+                <select id="filtroMes" onchange="aplicarFiltro()" class="cursor-pointer appearance-auto bg-transparent border-none min-w-[150px]">
+                    <option value="Todos">Carregando...</option>
+                </select>
+                <button type="button" onclick="carregarDados()" class="mini-action" title="Atualizar dados"><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-8" id="cards-kpi"></section>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 mb-12">
+        <div class="xl:col-span-2 flex flex-col gap-6 md:gap-8">
+            <div class="glass-card chart-card rounded-2xl p-4 md:p-6 animate-fade-in delay-200 w-full flex flex-col">
+                <h3 class="text-base md:text-lg font-semibold mb-4 text-slate-200 border-b border-white/5 pb-2">
+                    <i class="fa-solid fa-money-bill-trend-up text-emerald-400 mr-2"></i> Projeção de Faturamento (Mensal)
+                </h3>
+                <div style="position: relative; height: 300px; width: 100%;">
+                    <canvas id="chartProjecao"></canvas>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                <div class="glass-card chart-card rounded-2xl p-4 md:p-6 animate-fade-in delay-200 flex flex-col">
+                    <h3 class="text-base md:text-lg font-semibold mb-4 text-slate-200 border-b border-white/5 pb-2">
+                        <i class="fa-solid fa-clipboard-list text-purple-400 mr-2"></i> Status
+                    </h3>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="chartStatus"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card chart-card rounded-2xl p-4 md:p-6 animate-fade-in delay-200 flex flex-col">
+                    <h3 class="text-base md:text-lg font-semibold mb-4 text-slate-200 border-b border-white/5 pb-2">
+                        <i class="fa-solid fa-crown text-yellow-400 mr-2"></i> Clientes
+                    </h3>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="chartClientes"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card chart-card rounded-2xl p-4 md:p-6 animate-fade-in delay-200 flex flex-col">
+                    <h3 class="text-base md:text-lg font-semibold mb-4 text-slate-200 border-b border-white/5 pb-2">
+                        <i class="fa-solid fa-satellite-dish text-pink-400 mr-2"></i> Concentração
+                    </h3>
+                    <div style="position: relative; height: 250px; width: 100%;">
+                        <canvas id="chartPolar"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-0 animate-fade-in delay-200 xl:col-span-1 flex flex-col h-[500px] xl:h-[730px] shadow-[0_0_20px_rgba(59,130,246,0.1)] overflow-hidden border-t-4 border-blue-500">
+            <div class="p-4 md:p-6 border-b border-white/5 bg-gradient-to-b from-blue-900/20 to-transparent shrink-0">
+                <h3 class="text-lg md:text-xl font-bold text-white mb-1"><i class="fa-regular fa-calendar text-blue-400 mr-2"></i> Próximos Compromissos</h3>
+                <p class="text-[10px] md:text-xs text-slate-400 font-semibold uppercase tracking-widest">Agenda interativa (Clique no status para mudar)</p>
+            </div>
+            <div class="flex-1 overflow-y-auto p-2 md:p-4 custom-scrollbar" id="agenda-lista"></div>
+        </div>
+    </div>
+
+    <!-- Modais Eventos -->
+    <div id="modalExtrato" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div id="modalExtratoContent" class="bg-[#0f172a] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden transform scale-95 opacity-0 flex flex-col">
+            <div id="extratoHeader" class="p-5 border-b border-white/5 flex justify-between items-center shrink-0">
+                <div>
+                    <h3 id="extratoTitulo" class="text-xl font-bold text-white">Extrato</h3>
+                    <p id="extratoSubtitulo" class="text-xs uppercase tracking-widest mt-1 font-bold opacity-70">Detalhes</p>
+                </div>
+                <button onclick="fecharModalExtrato()" class="text-slate-400 hover:text-white bg-white/5 w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 bg-[#05050a] flex-1 overflow-hidden flex flex-col">
+                <div class="overflow-y-auto flex-1 pr-2 custom-scrollbar border border-white/5 rounded-xl bg-black/20">
+                    <table class="w-full text-sm text-left border-collapse">
+                        <thead>
+                            <tr><th>Data</th><th>Evento & Cliente</th><th class="text-right" id="extratoTabelaCabecalho">Valor</th></tr>
+                        </thead>
+                        <tbody id="tabelaExtratoBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalForm" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 items-center justify-center p-2 md:p-4 hidden opacity-0 transition-opacity duration-300">
+        <div id="modalFormContent" class="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-lg max-h-[95vh] overflow-hidden shadow-2xl transform scale-95 opacity-0 flex flex-col">
+            <div class="p-4 md:p-6 border-b border-white/5 flex justify-between items-center bg-blue-900/10 shrink-0">
+                <h3 class="text-lg md:text-2xl font-bold text-white"><i class="fa-solid fa-plus-circle text-blue-400 mr-2"></i> Agendar Evento</h3>
+                <button onclick="fecharModalForm()" class="text-slate-400 hover:text-white bg-white/5 w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 md:p-6 bg-[#05050a] flex-1 overflow-y-auto custom-scrollbar">
+                <form id="formAddEvento" class="flex flex-col gap-4">
+                    <input type="hidden" name="action" value="create">
+                    <input type="hidden" name="Data" id="campoDataPeriodo">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="date-form-card">
+                            <div class="flex items-start gap-3">
+                                <span class="date-form-icon"><i class="fa-regular fa-calendar-plus"></i></span>
+                                <div class="flex-1 min-w-0">
+                                    <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest block">In&iacute;cio</label>
+                                    <input type="date" id="dataInicio" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="date-form-card">
+                            <div class="flex items-start gap-3">
+                                <span class="date-form-icon"><i class="fa-regular fa-calendar-check"></i></span>
+                                <div class="flex-1 min-w-0">
+                                    <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest block">Fim <span class="text-blue-300 normal-case tracking-normal">(opcional)</span></label>
+                                    <input type="date" id="dataFim">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="date-form-card sm:col-span-2">
+                            <div class="flex items-start gap-3">
+                                <span class="date-form-icon"><i class="fa-regular fa-clock"></i></span>
+                                <div class="flex-1 min-w-0">
+                                    <label class="text-[10px] text-slate-400 font-bold uppercase tracking-widest block">Hor&aacute;rio</label>
+                                    <input type="time" name="Hora" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="resumoPeriodo" class="period-summary items-center gap-2"><i class="fa-solid fa-wand-magic-sparkles text-blue-300"></i><span>Selecione uma data para montar o per&iacute;odo.</span></div>
+                    <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Nome do Evento</label><input type="text" name="Evento" placeholder="Ex: Casamento..." required></div>
+                    <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Cliente</label><input type="text" name="Cliente" placeholder="Nome do contratante" required></div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Status</label>
+                            <select name="Status">
+                                <option value="Agendado">Agendado</option>
+                                <option value="Concluído">Concluído</option>
+                                <option value="Pago">Pago</option>
+                            </select>
+                        </div>
+                        <div><label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Valor (R$)</label><input type="number" step="0.01" min="0" name="Valor" placeholder="1500.00" required></div>
+                    </div>
+                    <button type="submit" id="btnSubmit" class="mt-4 bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-bold text-base transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:-translate-y-0.5"><i class="fa-solid fa-cloud-arrow-up"></i> Salvar na Agenda</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalStatus" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div id="modalStatusContent" class="bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl transform scale-95 opacity-0 flex flex-col">
+            <div class="p-5 border-b border-white/5 flex justify-between items-center bg-slate-800/50 shrink-0">
+                <h3 class="text-xl font-bold text-white"><i class="fa-solid fa-pen-to-square text-blue-400 mr-2"></i> Gerenciar Evento</h3>
+                <button onclick="fecharModalStatus()" class="text-slate-400 hover:text-white bg-white/5 w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-5 bg-[#05050a]">
+                <form id="formUpdateStatus" class="flex flex-col gap-4">
+                    <input type="hidden" name="action" id="statusAction" value="update">
+                    <input type="hidden" id="updEvento" name="Evento">
+                    <input type="hidden" id="updData" name="Data">
+                    <input type="hidden" id="updHora" name="Hora">
+                    <input type="hidden" id="updCliente" name="Cliente">
+                    
+                    <div>
+                        <p class="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Evento Selecionado:</p>
+                        <p class="text-white font-bold" id="updNomeExibicao"></p>
+                    </div>
+                    
+                    <div>
+                        <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Alterar Status</label>
+                        <select name="Status" id="updStatusSelect">
+                            <option value="Agendado">Agendado</option>
+                            <option value="Concluído">Concluído</option>
+                            <option value="Pago">Pago</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                    </div>
+
+                    <div class="flex gap-3 mt-2">
+                        <button type="button" onclick="excluirEvento()" id="btnExcluirEvento" class="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white border border-red-600/30 p-3 rounded-xl font-bold transition-all flex-1" title="Apagar da Agenda"><i class="fa-solid fa-trash-can"></i> Excluir</button>
+                        <button type="submit" id="btnUpdateStatus" class="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl font-bold transition-all flex-[2] shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:-translate-y-0.5"><i class="fa-solid fa-arrows-rotate"></i> Atualizar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        Chart.defaults.color = '#94a3b8'; Chart.defaults.font.family = 'Inter'; Chart.defaults.animation.duration = 650;
+        
+        const formatMoeda = (val) => (!val && val !== 0) ? '' : new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+        const limpaNum = (val) => {
+            if (val === null || val === undefined || val === '') return 0;
+            if (typeof val === 'number') return val;
+            let v = val.toString().trim().replace(/[^\d.,-]/g, '');
+            if (v.includes(',') && v.includes('.')) {
+                // formato BR completo: 1.234,56 -> ponto é milhar, vírgula é decimal
+                v = v.replace(/\./g, '').replace(',', '.');
+            } else if (v.includes(',')) {
+                // só vírgula -> é o separador decimal
+                v = v.replace(',', '.');
+            }
+            // só ponto (ou nenhum separador) -> já está no formato certo (vindo do banco)
+            return parseFloat(v) || 0;
+        };
+        const normalizarTexto = (val) => (val || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+        function mostrarCarregando() {
+            const cards = document.getElementById('cards-kpi');
+            const agenda = document.getElementById('agenda-lista');
+            if(cards) cards.innerHTML = Array.from({ length: 5 }).map(() => `<div class="loading-shimmer"></div>`).join('');
+            if(agenda) agenda.innerHTML = `<div class="loading-shimmer mb-3"></div><div class="loading-shimmer mb-3"></div><div class="loading-shimmer"></div>`;
+        }
+
+        // ✅ Dados agora vêm do banco Neon via API própria da Vercel
+        const urlAPI = '/api/eventos';
+
+        let graficos = {}; 
+        let dadosGerais = [];
+        let dadosFiltrados = [];
+
+        const renderChart = (id, config) => { 
+            try {
+                const ctx = document.getElementById(id);
+                if (!ctx) return;
+                if (graficos[id]) graficos[id].destroy(); 
+                graficos[id] = new Chart(ctx, config); 
+            } catch (err) { console.error("Erro no gráfico", id, err); }
+        };
+
+        const mesesAbrev = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+
+        const parseDataSimples = (dataStr, anoReferencia = null) => {
+            if(!dataStr) return null;
+            const texto = dataStr.toString().trim();
+            let p = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if(p) return { dia: p[3], mes: p[2], ano: p[1] };
+            p = texto.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+            if(!p) return null;
+            let ano = p[3] || anoReferencia;
+            if(!ano) return null;
+            if(ano.length === 2) ano = `20${ano}`;
+            return { dia: p[1].padStart(2, '0'), mes: p[2].padStart(2, '0'), ano };
+        };
+
+        const dataPartParaDate = (part, horaStr) => {
+            if(!part) return null;
+            let hs = horaStr ? horaStr.split(':') : ['00', '00'];
+            return new Date(part.ano, parseInt(part.mes)-1, part.dia, hs[0]||0, hs[1]||0);
+        };
+
+        const formatarDataPart = (part) => part ? `${part.dia}/${part.mes}/${part.ano}` : '';
+
+        const obterPeriodo = (dataStr) => {
+            if(!dataStr) return null;
+            const partes = dataStr.toString().trim().split(/\s+(?:a|at\u00e9|-|–|—)\s+/i).filter(Boolean);
+            const inicio = parseDataSimples(partes[0]);
+            if(!inicio) return null;
+            let fim = inicio;
+            if(partes.length > 1) {
+                fim = parseDataSimples(partes[1], inicio.ano);
+                if(!fim) return null;
+            }
+            return { inicio, fim, temPeriodo: partes.length > 1 };
+        };
+
+        const normalizarDataParaSalvar = (dataStr) => {
+            const periodo = obterPeriodo(dataStr);
+            if(!periodo) return '';
+            const inicio = formatarDataPart(periodo.inicio);
+            const fim = formatarDataPart(periodo.fim);
+            return periodo.temPeriodo ? `${inicio} a ${fim}` : inicio;
+        };
+
+        const parseDataHora = (dataStr, horaStr, usarFim = false) => {
+            const periodo = obterPeriodo(dataStr);
+            if(!periodo) return null;
+            return dataPartParaDate(usarFim ? periodo.fim : periodo.inicio, horaStr);
+        };
+
+        const obterMesesDoPeriodo = (dataStr) => {
+            const periodo = obterPeriodo(dataStr);
+            if(!periodo) return ['Sem Data'];
+            const meses = [];
+            let atual = new Date(periodo.inicio.ano, parseInt(periodo.inicio.mes)-1, 1);
+            const fim = new Date(periodo.fim.ano, parseInt(periodo.fim.mes)-1, 1);
+            while(atual <= fim) {
+                meses.push(`${String(atual.getMonth() + 1).padStart(2, '0')}/${atual.getFullYear()}`);
+                atual.setMonth(atual.getMonth() + 1);
+            }
+            return meses;
+        };
+
+        const formatarDataBox = (dataStr) => {
+            const periodo = obterPeriodo(dataStr);
+            if(!periodo) return { dia: '-', mes: '-', periodo: false, chip: '' };
+            if(!periodo.temPeriodo) return { dia: periodo.inicio.dia, mes: mesesAbrev[parseInt(periodo.inicio.mes)-1], periodo: false, chip: '' };
+            const mesmoMes = periodo.inicio.mes === periodo.fim.mes && periodo.inicio.ano === periodo.fim.ano;
+            return {
+                dia: mesmoMes ? `${periodo.inicio.dia} → ${periodo.fim.dia}` : `${periodo.inicio.dia}/${periodo.inicio.mes} → ${periodo.fim.dia}/${periodo.fim.mes}`,
+                mes: mesmoMes ? mesesAbrev[parseInt(periodo.inicio.mes)-1] : `${mesesAbrev[parseInt(periodo.inicio.mes)-1]}-${mesesAbrev[parseInt(periodo.fim.mes)-1]}`,
+                periodo: true,
+                chip: 'per\u00edodo'
+            };
+        };
+
+        function carregarDados() {
+            mostrarCarregando();
+            fetch(urlAPI)
+            .then(res => {
+                if (!res.ok) throw new Error('Falha ao buscar eventos');
+                return res.json();
+            })
+            .then(rows => {
+                dadosGerais = rows.map(d => {
+                    let mesesAno = obterMesesDoPeriodo(d.data);
+                    let mesAno = mesesAno[0] || 'Sem Data';
+                    return {
+                        id: d.id,
+                        Evento: d.evento, Cliente: d.cliente, Data: d.data, Hora: d.hora,
+                        Status: d.status, Valor: d.valor,
+                        ValorNum: limpaNum(d.valor), MesAno: mesAno, MesesAno: mesesAno,
+                        DataReal: parseDataHora(d.data, d.hora),
+                        DataFimReal: parseDataHora(d.data, d.hora, true)
+                    };
+                }).filter(d => d.Evento || d.ValorNum > 0);
+
+                const todosMeses = new Set(dadosGerais.flatMap(d => d.MesesAno || [d.MesAno]));
+                const selectFiltro = document.getElementById('filtroMes');
+                let valorAntigo = selectFiltro.value;
+
+                selectFiltro.innerHTML = `<option value="Todos">Todos os Meses</option>`;
+                Array.from(todosMeses).sort((a,b) => b.localeCompare(a)).forEach(mes => {
+                    if(mes !== 'Sem Data') selectFiltro.innerHTML += `<option value="${mes}">${mes}</option>`;
+                });
+                if(valorAntigo !== 'Carregando...' && valorAntigo !== 'Todos') {
+                    if(Array.from(todosMeses).includes(valorAntigo)) selectFiltro.value = valorAntigo;
+                }
+
+                aplicarFiltro();
+            })
+            .catch(err => {
+                console.error('Erro ao carregar eventos:', err);
+                document.getElementById('agenda-lista').innerHTML = `<div class="text-center p-8 text-red-400">Erro ao carregar dados. Verifique a API.</div>`;
+            });
+        }
+        
+        carregarDados();
+
+        function getStatusClass(status) {
+            let s = (status || '').toLowerCase();
+            if(s.includes('agendado')) return 'status-agendado';
+            if(s.includes('pago')) return 'status-pago';
+            if(s.includes('conclu')) return 'status-concluido';
+            if(s.includes('cancel')) return 'status-cancelado';
+            return 'bg-slate-800 text-slate-300 border border-slate-600';
+        }
+
+        function aplicarFiltro() {
+            const mesSel = document.getElementById('filtroMes').value;
+            const termoBusca = normalizarTexto(document.getElementById('filtroBusca')?.value || '');
+            dadosFiltrados = mesSel === "Todos" ? dadosGerais : dadosGerais.filter(d => (d.MesesAno || [d.MesAno]).includes(mesSel));
+
+            if(termoBusca) {
+                dadosFiltrados = dadosFiltrados.filter(d => {
+                    const textoEvento = normalizarTexto(`${d.Evento} ${d.Cliente} ${d.Status} ${d.Data}`);
+                    return textoEvento.includes(termoBusca);
+                });
+            }
+
+            let agora = new Date();
+            let proximosEventos = dadosGerais.filter(d => d.DataReal && (d.DataFimReal || d.DataReal) >= agora && !(d.Status||'').toLowerCase().includes('cancelado')).sort((a,b) => a.DataReal - b.DataReal);
+            let proxEvento = proximosEventos.length > 0 ? proximosEventos[0] : null;
+
+            let kpiProxEventoHTML = '';
+            if(proxEvento) {
+                kpiProxEventoHTML = `
+                    <div class="glass-card kpi-card rounded-2xl p-4 md:p-5 border-l-4 border-blue-500 relative overflow-hidden group text-blue-400">
+                        <div class="absolute -right-4 -top-4 text-blue-500/10 text-6xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-clock"></i></div>
+                        <p class="text-blue-400 text-[9px] md:text-[10px] font-bold uppercase mb-1 tracking-widest"><i class="fa-solid fa-bolt mr-1"></i> Próximo Evento</p>
+                        <h2 class="text-lg md:text-xl font-extrabold text-white truncate drop-shadow-md mb-1">${proxEvento.Evento}</h2>
+                        <p class="text-xs md:text-sm font-semibold text-slate-300"><i class="fa-regular fa-calendar mr-1"></i> ${proxEvento.Data} às ${proxEvento.Hora || '--:--'}</p>
+                    </div>`;
+            } else {
+                kpiProxEventoHTML = `
+                    <div class="glass-card kpi-card rounded-2xl p-4 md:p-5 border-l-4 border-slate-600 text-slate-400">
+                        <p class="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase mb-1 tracking-widest">Próximo Evento</p>
+                        <h2 class="text-base md:text-lg font-bold text-slate-500">Agenda Livre</h2>
+                    </div>`;
+            }
+
+            let faturamentoAgendado = dadosFiltrados.filter(d => (d.Status||'').toLowerCase().includes('agendado')).reduce((acc, curr) => acc + curr.ValorNum, 0);
+            let faturamentoConcluido = dadosFiltrados.filter(d => (d.Status||'').toLowerCase().includes('conclu')).reduce((acc, curr) => acc + curr.ValorNum, 0);
+            let faturamentoPago = dadosFiltrados.filter(d => (d.Status||'').toLowerCase().includes('pago')).reduce((acc, curr) => acc + curr.ValorNum, 0);
+            let qtdEventos = dadosFiltrados.filter(d => !(d.Status||'').toLowerCase().includes('cancelado')).length;
+
+            document.getElementById('cards-kpi').innerHTML = `
+                ${kpiProxEventoHTML}
+                
+                <div class="glass-card kpi-card rounded-2xl p-4 md:p-5 border-l-4 border-purple-500 text-purple-400">
+                    <p class="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase mb-1 tracking-widest"><i class="fa-solid fa-chart-line text-purple-400 mr-1"></i> A Projetar (Agendado)</p>
+                    <h2 class="text-xl md:text-2xl font-extrabold text-white">${formatMoeda(faturamentoAgendado)}</h2>
+                </div>
+
+                <div class="glass-card kpi-card rounded-2xl p-4 md:p-5 border-l-4 border-yellow-300 bg-yellow-400/20 cursor-pointer group hover:bg-yellow-400/30 transition-colors shadow-[0_0_15px_rgba(253,224,71,0.15)] text-yellow-300" onclick="abrirModalExtrato('concluido')">
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="text-yellow-300 text-[9px] md:text-[10px] font-bold uppercase tracking-widest"><i class="fa-solid fa-hourglass-half mr-1"></i> A Receber (Concluído)</p>
+                    </div>
+                    <h2 class="text-xl md:text-2xl font-extrabold text-white">${formatMoeda(faturamentoConcluido)}</h2>
+                    <div class="mt-3 text-[8px] md:text-[9px] text-yellow-200/80 font-medium tracking-widest uppercase flex justify-between items-center border-t border-yellow-400/30 pt-2">
+                        <span>Ver Pendentes</span><i class="fa-solid fa-arrow-pointer animate-pulse"></i>
+                    </div>
+                </div>
+                
+                <div class="credit-card brand-business kpi-card rounded-2xl p-4 md:p-5 shadow-[0_10px_20px_rgba(16,185,129,0.2)] flex flex-col justify-between group text-emerald-400" onclick="abrirModalExtrato('pago')">
+                    <div class="flex justify-between items-start mb-2 relative z-10">
+                        <p class="text-emerald-400 text-[9px] md:text-[10px] font-bold uppercase tracking-widest"><i class="fa-solid fa-building-columns mr-1"></i> Caixa Empresa</p>
+                        <i class="fa-brands fa-cc-visa text-2xl text-emerald-500/50 group-hover:text-emerald-400 transition-colors"></i>
+                    </div>
+                    <div class="relative z-10">
+                        <h2 class="text-xl md:text-2xl font-extrabold text-white drop-shadow-md">${formatMoeda(faturamentoPago)}</h2>
+                    </div>
+                    <div class="mt-2 text-[8px] md:text-[9px] text-emerald-300/80 font-medium tracking-widest uppercase flex justify-between items-center border-t border-emerald-500/30 pt-2 relative z-10">
+                        <span>Ver extrato</span><i class="fa-solid fa-arrow-pointer animate-pulse"></i>
+                    </div>
+                </div>
+
+                <div class="glass-card kpi-card rounded-2xl p-4 md:p-5 border-l-4 border-blue-500 text-blue-400">
+                    <p class="text-slate-400 text-[9px] md:text-[10px] font-bold uppercase mb-1 tracking-widest"><i class="fa-solid fa-layer-group text-blue-400 mr-1"></i> Volume de Eventos</p>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-blue-400">${qtdEventos} <span class="text-xs md:text-sm font-medium text-slate-500">Trabalhos</span></h2>
+                </div>
+            `;
+
+            let eventosOrdenados = [...dadosFiltrados].sort((a,b) => {
+                if(!a.DataReal) return 1; if(!b.DataReal) return -1;
+                return a.DataReal - b.DataReal;
+            });
+
+            let mapaHorarios = {};
+            let totalConflitos = 0;
+
+            eventosOrdenados.forEach(e => {
+                if(!e.DataReal || (e.Status||'').toLowerCase().includes('cancelado')) return;
+                let dataSegura = e.Data || ''; let horaSegura = e.Hora || '';
+                let chave = `${dataSegura.trim()} - ${horaSegura.trim()}`;
+                if(!mapaHorarios[chave]) mapaHorarios[chave] = [];
+                mapaHorarios[chave].push(e);
+            });
+
+            eventosOrdenados.forEach(e => {
+                e.conflito = false;
+                if(e.DataReal && !(e.Status||'').toLowerCase().includes('cancelado')) {
+                    let dataSegura = e.Data || ''; let horaSegura = e.Hora || '';
+                    let chave = `${dataSegura.trim()} - ${horaSegura.trim()}`;
+                    if(mapaHorarios[chave] && mapaHorarios[chave].length > 1) {
+                        e.conflito = true; totalConflitos++;
+                    }
+                }
+            });
+
+            let htmlAgenda = '';
+            if(totalConflitos > 0) {
+                htmlAgenda += `<div class="bg-red-900/30 border border-red-500/50 rounded-xl p-2 md:p-3 mb-4 flex items-center gap-3 animate-pulse"><i class="fa-solid fa-triangle-exclamation text-red-500 text-lg md:text-xl"></i><div class="text-xs md:text-sm text-red-200"><strong>Atenção!</strong> Você tem <strong>${totalConflitos} eventos</strong> marcados para o mesmo horário neste mês.</div></div>`;
+            }
+
+            if(eventosOrdenados.length === 0) {
+                htmlAgenda += `
+                    <div class="text-center p-8 text-slate-500 flex flex-col items-center rounded-2xl border border-white/5 bg-white/[0.02]">
+                        <div class="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-300 flex items-center justify-center mb-3"><i class="fa-solid fa-mug-hot text-2xl"></i></div>
+                        <p class="text-sm md:text-base font-bold text-slate-300">Nenhum evento encontrado.</p>
+                        <p class="text-xs text-slate-500 mt-1">Tente mudar o mês ou limpar a busca.</p>
+                    </div>`;
+            } else {
+                eventosOrdenados.forEach((e, idx) => {
+                    let dBox = formatarDataBox(e.Data);
+                    let classStatus = getStatusClass(e.Status);
+                    let isCancelado = (e.Status||'').toLowerCase().includes('cancelado');
+                    let classConflitoBox = e.conflito ? 'card-conflito' : '';
+                    let badgeConflito = e.conflito ? `<span class="text-[8px] md:text-[9px] uppercase font-bold px-1 py-0.5 md:px-2 rounded bg-red-900/50 text-red-400 border border-red-500 shrink-0"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Conflito</span>` : '';
+                    
+                    let eventoSafe = (e.Evento || '').replace(/'/g, "\\'");
+                    let dataSafe = e.Data || '';
+                    let horaSafe = e.Hora || '';
+                    let clienteSafe = (e.Cliente || '').replace(/'/g, "\\'");
+                    let statusSafe = e.Status || '';
+                    let classeBoxData = dBox.periodo ? 'agenda-date-box-periodo' : '';
+                    let chipPeriodo = dBox.periodo ? `<span class="agenda-period-chip">${dBox.chip}</span>` : '';
+
+                    htmlAgenda += `
+                        <div class="agenda-item flex gap-3 md:gap-4 p-2 md:p-3 rounded-xl transition-all duration-200 border border-transparent hover:border-white/10 group ${isCancelado ? 'opacity-40 grayscale' : ''} ${classConflitoBox}" style="--delay:${Math.min(idx * 28, 220)}ms">
+                            <div class="agenda-date-box ${classeBoxData} shrink-0 w-12 h-12 md:w-14 md:h-14 rounded-lg flex flex-col items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
+                                <span class="text-[10px] md:text-xs font-bold text-blue-400 tracking-widest">${dBox.mes}</span>
+                                <span class="agenda-date-range text-lg md:text-xl font-black text-white leading-none">${dBox.dia}</span>
+                                ${chipPeriodo}
+                            </div>
+                            <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                <div class="flex justify-between items-start mb-1 gap-2">
+                                    <h4 class="font-bold text-white text-sm md:text-[15px] truncate pr-2 group-hover:text-blue-300 transition-colors">${e.Evento || 'Sem Nome'}</h4>
+                                    ${badgeConflito}
+                                </div>
+                                <div class="flex flex-col sm:flex-row justify-between sm:items-center mt-1 gap-1 sm:gap-0">
+                                    <div class="flex items-center gap-1 md:gap-2 text-[10px] md:text-[11px] text-slate-400 font-medium truncate pr-2">
+                                        <span class="${e.conflito ? 'text-red-400 font-bold' : ''}"><i class="fa-regular fa-clock mr-1"></i>${e.Hora || '--:--'}</span>
+                                        <span class="hidden sm:inline">&bull;</span>
+                                        <span class="truncate"><i class="fa-regular fa-user mr-1"></i>${e.Cliente || 'Sem Cliente'}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
+                                        <span class="text-xs md:text-sm font-black whitespace-nowrap ${isCancelado ? 'text-slate-500 line-through' : 'text-emerald-400'}">${formatMoeda(e.ValorNum)}</span>
+                                        <span onclick="abrirModalStatus('${eventoSafe}', '${dataSafe}', '${horaSafe}', '${clienteSafe}', '${statusSafe}')" class="status-pill cursor-pointer text-[8px] md:text-[9px] uppercase font-bold px-1.5 md:px-2 py-0.5 rounded ${classStatus} shrink-0 hover:scale-105 hover:shadow-[0_0_10px_rgba(255,255,255,0.2)] transition-all flex items-center gap-1">
+                                            ${e.Status || 'Pendente'} <i class="fa-solid fa-pen text-[7px] opacity-70"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="w-full h-px bg-white/5 my-1 last:hidden"></div>
+                    `;
+                });
+            }
+            document.getElementById('agenda-lista').innerHTML = htmlAgenda;
+
+            try {
+                let projMesObj = {};
+                dadosGerais.forEach(d => {
+                    if(!(d.Status||'').toLowerCase().includes('cancelado') && d.MesAno !== 'Sem Data') {
+                        projMesObj[d.MesAno] = (projMesObj[d.MesAno] || 0) + d.ValorNum;
+                    }
+                });
+                
+                let labelsProj = Object.keys(projMesObj).sort((a,b) => {
+                    let pa = a.split('/'); let pb = b.split('/');
+                    if(pa.length!==2 || pb.length!==2) return 0;
+                    return new Date(pa[1], pa[0]-1) - new Date(pb[1], pb[0]-1);
+                });
+                
+                let valsProj = labelsProj.map(k => projMesObj[k]);
+                if(labelsProj.length === 0) { labelsProj = ['Aguardando Eventos']; valsProj = [0]; }
+                let valorMaximo = Math.max(...valsProj, 0);
+
+                renderChart('chartProjecao', {
+                    type: 'line',
+                    data: { labels: labelsProj, datasets: [{ label: 'Faturamento R$', data: valsProj, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, pointBackgroundColor: '#fff', pointBorderColor: '#10b981', pointRadius: 5, fill: true, tension: 0.4 }] },
+                    options: { 
+                        layout: { padding: { top: 40, right: 30, left: 30 } }, 
+                        responsive: true, maintainAspectRatio: false, 
+                        plugins: { legend: { display: false }, datalabels: { color: '#cbd5e1', font: { weight: 'bold', size: 10 }, anchor: 'end', align: 'top', formatter: formatMoeda } }, 
+                        scales: { y: { display: false, min: 0, suggestedMax: valorMaximo > 0 ? valorMaximo * 1.3 : 100 }, x: { offset: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { font: { weight: 'bold', size: 10 } } } } 
+                    }
+                });
+            } catch(e) { console.error(e); }
+
+            try {
+                let statusObj = { 'Agendado': 0, 'Concluído': 0, 'Pago': 0, 'Cancelado': 0 };
+                dadosFiltrados.forEach(d => {
+                    let s = (d.Status||'Pendente').trim();
+                    let sk = Object.keys(statusObj).find(k => s.toLowerCase().includes(k.toLowerCase()));
+                    if(sk) statusObj[sk]++; else statusObj['Agendado']++; 
+                });
+                let valsStatus = Object.values(statusObj);
+                let coresStatus = ['#3b82f6', '#10b981', '#fbbf24', '#ef4444'];
+
+                renderChart('chartStatus', {
+                    type: 'doughnut',
+                    data: { labels: Object.keys(statusObj), datasets: [{ data: valsStatus, backgroundColor: coresStatus, borderWidth: 2, borderColor: '#05050a' }] },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: {size: 10} } }, datalabels: { color: '#fff', font: { weight: 'bold', size: 12 }, formatter: (v) => v > 0 ? v : '' } } }
+                });
+            } catch(e) { console.error(e); }
+
+            try {
+                let clientesObj = {};
+                dadosFiltrados.forEach(d => {
+                    if(!(d.Status||'').toLowerCase().includes('cancelado')) {
+                        let cli = d.Cliente || 'Avulso';
+                        clientesObj[cli] = (clientesObj[cli] || 0) + d.ValorNum;
+                    }
+                });
+                let topClientes = Object.entries(clientesObj).sort((a,b) => b[1] - a[1]).slice(0, 5);
+                if(topClientes.length === 0) { topClientes = [['Aguardando Clientes', 0]]; }
+                
+                renderChart('chartClientes', {
+                    type: 'bar',
+                    data: { labels: topClientes.map(c => c[0]), datasets: [{ data: topClientes.map(c => c[1]), backgroundColor: '#eab308', borderRadius: 4 }] },
+                    options: { indexAxis: 'y', layout: { padding: { right: 60 } }, responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { color: '#cbd5e1', font: { weight: 'bold', size: 10 }, anchor: 'end', align: 'right', formatter: formatMoeda } }, scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 10 } } } } }
+                });
+            } catch(e) { console.error(e); }
+
+            try {
+                let recStatusObj = { 'Agendado': 0, 'Concluído': 0, 'Pago': 0, 'Cancelado': 0 };
+                dadosFiltrados.forEach(d => {
+                    let s = (d.Status||'Pendente').trim();
+                    let sk = Object.keys(recStatusObj).find(k => s.toLowerCase().includes(k.toLowerCase()));
+                    if(sk) recStatusObj[sk] += d.ValorNum; else recStatusObj['Agendado'] += d.ValorNum;
+                });
+                let recStatusVals = Object.values(recStatusObj);
+                let coresPolar = ['rgba(59, 130, 246, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(239, 68, 68, 0.7)'];
+                
+                renderChart('chartPolar', {
+                    type: 'polarArea',
+                    data: { labels: Object.keys(recStatusObj), datasets: [{ data: recStatusVals, backgroundColor: coresPolar, borderColor: '#05050a', borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { r: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' } } }, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: {size: 10} } }, datalabels: { display: false } } }
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        const modalForm = document.getElementById('modalForm');
+        const modalFormContent = document.getElementById('modalFormContent');
+        const modalStatus = document.getElementById('modalStatus');
+        const modalStatusContent = document.getElementById('modalStatusContent');
+        const modalExtrato = document.getElementById('modalExtrato');
+        const modalExtratoContent = document.getElementById('modalExtratoContent');
+
+        function abrirModalForm() {
+            modalForm.classList.remove('hidden');
+            setTimeout(() => { modalForm.classList.add('modal-active'); modalFormContent.classList.add('modal-content-active'); }, 10);
+        }
+        function fecharModalForm() {
+            modalForm.classList.remove('modal-active'); modalFormContent.classList.remove('modal-content-active');
+            setTimeout(() => { modalForm.classList.add('hidden'); }, 300);
+        }
+        modalForm.addEventListener('click', (e) => { if (e.target === modalForm) fecharModalForm(); });
+
+        const inputDataInicio = document.getElementById('dataInicio');
+        const inputDataFim = document.getElementById('dataFim');
+        const resumoPeriodo = document.getElementById('resumoPeriodo');
+
+        const formatarDataInput = (valor) => {
+            const data = parseDataSimples(valor);
+            return data ? `${data.dia}/${data.mes}/${data.ano}` : '';
+        };
+
+        function atualizarResumoPeriodo() {
+            inputDataFim.min = inputDataInicio.value;
+            if(inputDataFim.value && inputDataFim.value < inputDataInicio.value) inputDataFim.value = inputDataInicio.value;
+            const inicio = formatarDataInput(inputDataInicio.value);
+            const fim = formatarDataInput(inputDataFim.value);
+
+            if(!inicio) {
+                resumoPeriodo.classList.remove('active');
+                resumoPeriodo.querySelector('span').innerText = 'Selecione uma data para montar o per\u00edodo.';
+                return;
+            }
+            resumoPeriodo.classList.add('active');
+            resumoPeriodo.querySelector('span').innerText = fim && fim !== inicio
+                ? `Per\u00edodo selecionado: ${inicio} at\u00e9 ${fim}`
+                : `Data selecionada: ${inicio}`;
+        }
+
+        inputDataInicio.addEventListener('change', atualizarResumoPeriodo);
+        inputDataFim.addEventListener('change', atualizarResumoPeriodo);
+
+        function abrirModalStatus(evento, data, hora, cliente, statusAtual) {
+            document.getElementById('statusAction').value = 'update'; 
+            document.getElementById('updEvento').value = evento;
+            document.getElementById('updData').value = data;
+            document.getElementById('updHora').value = hora;
+            document.getElementById('updCliente').value = cliente;
+            
+            document.getElementById('updNomeExibicao').innerText = `${evento} (${data} às ${hora})`;
+            
+            let selects = document.getElementById('updStatusSelect').options;
+            for(let i=0; i<selects.length; i++){
+                if(selects[i].value === statusAtual) selects[i].selected = true;
+            }
+
+            modalStatus.classList.remove('hidden');
+            setTimeout(() => { modalStatus.classList.add('modal-active'); modalStatusContent.classList.add('modal-content-active'); }, 10);
+        }
+        function fecharModalStatus() {
+            modalStatus.classList.remove('modal-active'); modalStatusContent.classList.remove('modal-content-active');
+            setTimeout(() => { modalStatus.classList.add('hidden'); }, 300);
+        }
+        modalStatus.addEventListener('click', (e) => { if (e.target === modalStatus) fecharModalStatus(); });
+
+        function excluirEvento() {
+            if(!confirm("Tem certeza absoluta que deseja excluir este evento? Esta ação não tem volta.")) return;
+            
+            const btn = document.getElementById('btnExcluirEvento');
+            const txtOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Apagando...';
+            btn.disabled = true;
+
+            document.getElementById('statusAction').value = 'delete';
+
+            const form = document.getElementById('formUpdateStatus');
+            const formData = new FormData(form);
+            const dataEncoded = new URLSearchParams(formData).toString();
+
+            fetch(urlAPI, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: dataEncoded })
+            .then(res => { if (!res.ok) throw new Error('Falha na requisição'); return res.json(); })
+            .then(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Excluído!';
+                btn.classList.replace('text-red-500', 'text-white');
+                btn.classList.replace('bg-red-600/20', 'bg-red-600');
+                
+                setTimeout(() => {
+                    fecharModalStatus();
+                    btn.innerHTML = txtOriginal;
+                    btn.classList.replace('text-white', 'text-red-500');
+                    btn.classList.replace('bg-red-600', 'bg-red-600/20');
+                    btn.disabled = false;
+                    document.getElementById('statusAction').value = 'update'; 
+                    carregarDados(); 
+                }, 1500);
+            }).catch(() => { alert('Erro na conexão com o banco de dados.'); btn.innerHTML = txtOriginal; btn.disabled = false; });
+        }
+
+        function abrirModalExtrato(tipoFiltragem) {
+            let pagamentos = [];
+            let titulo = ''; let subtitulo = ''; let icone = ''; let corTema = '';
+
+            if(tipoFiltragem === 'concluido') {
+                pagamentos = dadosFiltrados.filter(d => (d.Status||'').toLowerCase() === 'concluído').sort((a,b) => b.DataReal - a.DataReal);
+                titulo = 'Valores a Receber'; subtitulo = 'Eventos concluídos aguardando pagamento'; icone = 'fa-hourglass-half'; corTema = 'text-yellow-400';
+                document.getElementById('modalExtratoContent').className = 'bg-[#0f172a] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden transform scale-95 opacity-0 flex flex-col shadow-[0_0_40px_rgba(250,204,21,0.15)] border border-yellow-400/30';
+                document.getElementById('extratoHeader').className = 'p-5 border-b border-white/5 flex justify-between items-center bg-yellow-400/10 shrink-0';
+            } else {
+                pagamentos = dadosFiltrados.filter(d => (d.Status||'').toLowerCase() === 'pago').sort((a,b) => b.DataReal - a.DataReal);
+                titulo = 'Extrato da Conta Empresa'; subtitulo = 'Listando apenas os eventos confirmados como "Pagos"'; icone = 'fa-receipt'; corTema = 'text-emerald-400';
+                document.getElementById('modalExtratoContent').className = 'bg-[#0f172a] rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden transform scale-95 opacity-0 flex flex-col shadow-[0_0_40px_rgba(16,185,129,0.15)] border border-emerald-500/30';
+                document.getElementById('extratoHeader').className = 'p-5 border-b border-white/5 flex justify-between items-center bg-emerald-900/20 shrink-0';
+            }
+
+            document.getElementById('extratoTitulo').innerHTML = `<i class="fa-solid ${icone} ${corTema} mr-2"></i> <span class="text-white">${titulo}</span>`;
+            document.getElementById('extratoSubtitulo').innerText = subtitulo;
+            document.getElementById('extratoTabelaCabecalho').className = `text-right font-bold ${corTema}`;
+
+            let htmlTabela = '';
+            if(pagamentos.length === 0) {
+                htmlTabela = `<tr><td colspan="3" class="text-center text-slate-500 py-8">Nenhum evento neste status.</td></tr>`;
+            } else {
+                pagamentos.forEach(p => {
+                    htmlTabela += `
+                        <tr class="hover:bg-white/5 transition-colors">
+                            <td class="p-3 text-slate-400 whitespace-nowrap">${p.Data}</td>
+                            <td class="p-3"><div class="font-bold text-white">${p.Evento}</div><div class="text-[10px] ${corTema}"><i class="fa-solid fa-user text-[9px] mr-1"></i> ${p.Cliente}</div></td>
+                            <td class="p-3 text-right font-bold ${corTema} whitespace-nowrap">${tipoFiltragem === 'pago' ? '+ ' : ''}${formatMoeda(p.ValorNum)}</td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            document.getElementById('tabelaExtratoBody').innerHTML = htmlTabela;
+            modalExtrato.classList.remove('hidden');
+            setTimeout(() => { modalExtrato.classList.add('modal-active'); modalExtratoContent.classList.add('modal-content-active'); }, 10);
+        }
+        
+        function fecharModalExtrato() {
+            modalExtrato.classList.remove('modal-active'); modalExtratoContent.classList.remove('modal-content-active');
+            setTimeout(() => { modalExtrato.classList.add('hidden'); }, 300);
+        }
+        modalExtrato.addEventListener('click', (e) => { if (e.target === modalExtrato) fecharModalExtrato(); });
+
+        document.getElementById('formAddEvento').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            const btn = document.getElementById('btnSubmit');
+            const txtOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+            btn.disabled = true;
+
+            const campoData = this.elements['Data'];
+            const dataInicio = document.getElementById('dataInicio').value;
+            const dataFim = document.getElementById('dataFim').value;
+            const dataOriginal = dataFim ? `${dataInicio} a ${dataFim}` : dataInicio;
+
+            if(dataFim && dataFim < dataInicio) {
+                alert('A data final n\u00e3o pode ser anterior \u00e0 data inicial.');
+                btn.innerHTML = txtOriginal; btn.disabled = false; return;
+            }
+
+            const dataNormalizada = normalizarDataParaSalvar(dataOriginal);
+            if(!dataNormalizada) {
+                alert('Selecione a data inicial e, se for per\u00edodo, selecione tamb\u00e9m a data final.');
+                btn.innerHTML = txtOriginal; btn.disabled = false; return;
+            }
+            campoData.value = dataNormalizada;
+
+            const formData = new FormData(this);
+            const dataEncoded = new URLSearchParams(formData).toString();
+
+            fetch(urlAPI, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: dataEncoded })
+            .then(res => { if (!res.ok) throw new Error('Falha na requisição'); return res.json(); })
+            .then(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Salvo com Sucesso!';
+                btn.classList.replace('bg-blue-600', 'bg-emerald-500');
+                
+                setTimeout(() => {
+                    fecharModalForm();
+                    this.reset();
+                    atualizarResumoPeriodo();
+                    btn.innerHTML = txtOriginal;
+                    btn.classList.replace('bg-emerald-500', 'bg-blue-600');
+                    btn.disabled = false;
+                    carregarDados(); 
+                }, 1500);
+            }).catch(() => { alert('Erro na conexão com o banco de dados.'); btn.innerHTML = txtOriginal; btn.disabled = false; });
+        });
+
+        document.getElementById('formUpdateStatus').addEventListener('submit', function(e) {
+            e.preventDefault(); 
+            if(document.getElementById('statusAction').value === 'delete') return;
+
+            const btn = document.getElementById('btnUpdateStatus');
+            const txtOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Atualizando...';
+            btn.disabled = true;
+
+            const formData = new FormData(this);
+            const dataEncoded = new URLSearchParams(formData).toString();
+
+            fetch(urlAPI, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: dataEncoded })
+            .then(res => { if (!res.ok) throw new Error('Falha na requisição'); return res.json(); })
+            .then(() => {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizado!';
+                btn.classList.replace('bg-blue-600', 'bg-emerald-500');
+                
+                setTimeout(() => {
+                    fecharModalStatus();
+                    btn.innerHTML = txtOriginal;
+                    btn.classList.replace('bg-emerald-500', 'bg-blue-600');
+                    btn.disabled = false;
+                    carregarDados(); 
+                }, 1500);
+            }).catch(() => { alert('Erro na conexão com o banco de dados.'); btn.innerHTML = txtOriginal; btn.disabled = false; });
+        });
+    </script>
+</div>
+</body>
+</html>

@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visão Geral Financeira</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@300;400;500;600;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+        :root{
+            --void:#05050a;
+            --emerald-deep:#043b2c;
+            --emerald-deep2:#011c15;
+            --emerald:#10b981;
+            --sapphire:#122a63;
+            --sapphire2:#0a1638;
+            --blue:#3b82f6;
+            --crimson:#5c1414;
+            --crimson2:#210505;
+            --red:#ef4444;
+            --amber-deep:#5c3a0a;
+            --amber-deep2:#241102;
+            --amber:#f59e0b;
+            --gold:#e8c874;
+            --ink:#f8fafc;
+        }
+
+        * { -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Inter', sans-serif; background: radial-gradient(circle at top left, rgba(16,185,129,0.10), transparent 32%), radial-gradient(circle at top right, rgba(59,130,246,0.10), transparent 30%), var(--void); color: #f8fafc; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 42px 42px; mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 78%); z-index: -1; }
+        .font-display { font-family: 'Sora', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        .glass-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); transition: all 0.3s ease; }
+        .app-shell { max-width: 1480px; margin: 0 auto; }
+        .hero-panel { position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.06); background: linear-gradient(135deg, rgba(6,78,59,0.76), rgba(2,44,34,0.45)); border-radius: 24px; padding: 18px; box-shadow: 0 18px 60px rgba(0,0,0,0.22); }
+        .hero-panel::after { content: ''; position: absolute; right: -80px; top: -120px; width: 260px; height: 260px; border-radius: 999px; background: rgba(16,185,129,0.16); filter: blur(14px); pointer-events: none; }
+
+        .filter-bar { background: rgba(15,23,42,0.78); border: 1px solid rgba(148,163,184,0.14); border-radius: 18px; padding: 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
+        select { background-color: transparent; color: #f8fafc; border: none; outline: none; font-weight: 600; width: 100%; cursor: pointer; }
+        select option { background-color: #0f172a; color: #f8fafc; font-weight: 500; }
+
+        .chart-card { position: relative; overflow: hidden; }
+        .chart-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, rgba(16,185,129,0.85), rgba(59,130,246,0.75), rgba(239,68,68,0.75)); opacity: .55; }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .mov-entrada { border-left: 3px solid #10b981; background: rgba(16, 185, 129, 0.05); }
+        .mov-saida { border-left: 3px solid #ef4444; background: rgba(239, 68, 68, 0.05); }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+
+        /* ===================== BANK CARDS ===================== */
+        .card-wall { perspective: 1400px; }
+
+        .bank-card {
+            position: relative;
+            height: 210px;
+            border-radius: 20px;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform .12s ease-out, box-shadow .3s ease;
+            will-change: transform;
+            opacity: 0;
+        }
+        .bank-card.card-in { animation: cardDeal .65s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .bank-card:nth-child(1){ animation-delay: .05s; }
+        .bank-card:nth-child(2){ animation-delay: .16s; }
+        .bank-card:nth-child(3){ animation-delay: .27s; }
+        .bank-card:nth-child(4){ animation-delay: .38s; }
+        @keyframes cardDeal {
+            from { opacity: 0; transform: translateY(36px) rotateX(18deg) scale(.94); }
+            to   { opacity: 1; transform: translateY(0) rotateX(0deg) scale(1); }
+        }
+
+        .bank-card-inner {
+            position: relative;
+            width: 100%; height: 100%;
+            border-radius: 20px;
+            padding: 20px 22px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 14px 34px -8px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.05);
+            transition: box-shadow .3s ease;
+        }
+        .bank-card:hover .bank-card-inner { box-shadow: 0 24px 50px -10px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 1px rgba(255,255,255,0.08); }
+
+        .bank-card[data-type="saldo"]   .bank-card-inner { background: radial-gradient(120% 140% at 15% 0%, var(--emerald-deep), var(--emerald-deep2) 70%); }
+        .bank-card[data-type="entradas"] .bank-card-inner { background: radial-gradient(120% 140% at 15% 0%, var(--sapphire), var(--sapphire2) 70%); }
+        .bank-card[data-type="saidas"]   .bank-card-inner { background: radial-gradient(120% 140% at 15% 0%, var(--crimson), var(--crimson2) 70%); }
+        .bank-card[data-type="receber"]  .bank-card-inner { background: radial-gradient(120% 140% at 15% 0%, var(--amber-deep), var(--amber-deep2) 70%); }
+
+        .bank-card-inner::before {
+            content:'';
+            position: absolute; inset: 0;
+            background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.035) 0px, rgba(255,255,255,0.035) 1px, transparent 1px, transparent 7px);
+            opacity: .5;
+            pointer-events: none;
+        }
+        .bank-card-inner::after {
+            content:''; position: absolute; right:-50px; bottom:-60px; width:170px; height:170px; border-radius:999px;
+            filter: blur(20px); opacity:.35; pointer-events:none;
+        }
+        .bank-card[data-type="saldo"]    .bank-card-inner::after { background: var(--emerald); }
+        .bank-card[data-type="entradas"] .bank-card-inner::after { background: var(--blue); }
+        .bank-card[data-type="saidas"]   .bank-card-inner::after { background: var(--red); }
+        .bank-card[data-type="receber"]  .bank-card-inner::after { background: var(--amber); }
+
+        .bank-card-shine {
+            position: absolute; inset: 0; border-radius: 20px; pointer-events: none;
+            background: radial-gradient(280px circle at var(--mx,50%) var(--my,20%), rgba(255,255,255,0.22), transparent 55%);
+            opacity: 0; transition: opacity .25s ease;
+            mix-blend-mode: overlay;
+        }
+        .bank-card:hover .bank-card-shine { opacity: 1; }
+
+        .bank-card-glare {
+            position:absolute; top:-50%; left:-60%; width:40%; height:220%;
+            background: linear-gradient(75deg, transparent, rgba(255,255,255,0.16), transparent);
+            transform: rotate(8deg) translateX(-40%);
+            pointer-events:none; transition: transform .7s ease;
+        }
+        .bank-card:hover .bank-card-glare { transform: rotate(8deg) translateX(340%); }
+
+        .bank-card-row-top { display:flex; align-items:flex-start; justify-content:space-between; position:relative; z-index:2; }
+        .bank-card-chip { width: 40px; height: 30px; border-radius: 6px; background: linear-gradient(140deg,#f6e6a8,#d4af37 45%,#8a6d1f); position:relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25); }
+        .bank-card-chip::before, .bank-card-chip::after { content:''; position:absolute; left:6px; right:6px; height:1px; background: rgba(0,0,0,0.35); }
+        .bank-card-chip::before { top: 8px; }
+        .bank-card-chip::after { top: 21px; }
+        .bank-card-chip .chip-mid { position:absolute; top:50%; left:6px; right:6px; height:1px; background: rgba(0,0,0,0.35); transform: translateY(-50%); }
+        .bank-card-chip .chip-vert { position:absolute; top:8px; bottom:8px; left:50%; width:1px; background: rgba(0,0,0,0.35); }
+
+        .bank-card-wave { font-size: 17px; opacity:.75; transform: rotate(90deg); }
+
+        .bank-card-eyebrow { font-size: 9.5px; letter-spacing: .22em; text-transform: uppercase; font-weight: 800; opacity: .72; }
+
+        .bank-card-value { font-family: 'Sora', sans-serif; font-weight: 800; letter-spacing: -0.01em; line-height: 1; position:relative; z-index:2; }
+
+        .bank-card-number { font-family: 'JetBrains Mono', monospace; font-size: 13px; letter-spacing: .16em; opacity: .55; position:relative; z-index:2; }
+
+        .bank-card-row-bottom { display:flex; align-items:flex-end; justify-content:space-between; position:relative; z-index:2; }
+        .bank-card-holder { font-family:'JetBrains Mono', monospace; font-size: 10px; letter-spacing:.1em; text-transform:uppercase; font-weight:600; opacity:.65; }
+        .bank-card-cta { font-size: 9px; letter-spacing:.16em; text-transform:uppercase; font-weight:800; display:flex; align-items:center; gap:6px; opacity:.85; }
+        .bank-card-cta i { transition: transform .25s ease; }
+        .bank-card:hover .bank-card-cta i { transform: translateX(3px); }
+
+        .bank-card-brand { display:flex; align-items:center; }
+        .bank-card-brand .c1, .bank-card-brand .c2 { width: 22px; height: 22px; border-radius: 999px; }
+        .bank-card-brand .c1 { background: rgba(255,255,255,0.55); }
+        .bank-card-brand .c2 { background: rgba(255,255,255,0.28); margin-left: -9px; }
+
+        .bank-card-flash { position:absolute; inset:0; border-radius:20px; background: rgba(255,255,255,0.35); opacity:0; pointer-events:none; }
+        .bank-card.flash .bank-card-flash { animation: cardFlash .5s ease; }
+        @keyframes cardFlash { 0%{opacity:.55;} 100%{opacity:0;} }
+
+        /* ===================== MISC ===================== */
+        .pulse-dot { position:relative; }
+        .pulse-dot::before { content:''; position:absolute; inset:0; border-radius:999px; background: currentColor; opacity:.55; animation: pulseDot 1.8s ease-out infinite; }
+        @keyframes pulseDot { 0%{ transform:scale(1); opacity:.5; } 100%{ transform:scale(2.6); opacity:0; } }
+
+        .btn-refresh { position: relative; overflow: hidden; }
+        .btn-refresh.spinning i { animation: spin .7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Estilos do Modal */
+        .modal-active { display: flex !important; animation: fadeIn 0.2s ease forwards; }
+        .modal-content-active { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(50px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        table { border-collapse: collapse; }
+        th { text-align: left; }
+
+        tbody tr { animation: rowIn .35s ease forwards; opacity:0; }
+        @keyframes rowIn { from { opacity:0; transform: translateX(-6px);} to { opacity:1; transform: translateX(0);} }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bank-card, .bank-card-inner, .bank-card-glare, .bank-card-shine, tbody tr, .animate-fade-in { animation: none !important; transition: none !important; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+<div class="app-shell">
+
+    <!-- BARRA DE NAVEGAÇÃO -->
+    <nav class="flex justify-between items-center mb-6 border-b border-white/10 pb-4 animate-fade-in">
+        <div class="flex items-center gap-4 md:gap-8">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#10b981] to-[#3b82f6] flex items-center justify-center text-white font-bold text-xl shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+                    <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white hidden sm:block font-display">Dashboard</h1>
+            </div>
+
+            <div class="flex bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto max-w-[60vw] md:max-w-none custom-scrollbar">
+                <a href="financeiro.html" class="px-3 py-2 md:px-4 rounded-lg text-sm font-bold transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie"></i> <span class="hidden sm:inline">Visão Geral</span>
+                </a>
+                <a href="index.html" class="px-3 py-2 md:px-4 rounded-lg text-sm font-bold transition-all text-slate-400 hover:text-white hover:bg-white/10 flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-calendar-check"></i> <span class="hidden sm:inline">Eventos</span>
+                </a>
+                <a href="gastos.html" class="px-3 py-2 md:px-4 rounded-lg text-sm font-bold transition-all text-slate-400 hover:text-white hover:bg-white/10 flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-receipt"></i> <span class="hidden sm:inline">Gastos</span>
+                </a>
+            </div>
+        </div>
+
+        <button id="btnAtualizar" onclick="carregarDados()" class="btn-refresh bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 border border-white/10 shrink-0">
+            <i class="fa-solid fa-rotate-right"></i> <span class="hidden sm:inline">Atualizar</span>
+        </button>
+    </nav>
+
+    <!-- HEADER COM FILTRO DE MÊS -->
+    <header class="hero-panel mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 animate-fade-in">
+        <div class="relative z-10">
+            <p class="text-[10px] md:text-xs text-emerald-300 font-black uppercase tracking-[0.3em] mb-2"><i class="fa-solid fa-building-columns mr-2"></i>Fluxo de Caixa</p>
+            <h2 class="text-3xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-white via-emerald-100 to-emerald-300 bg-clip-text text-transparent mb-2 font-display">Visão Geral Financeira</h2>
+            <p class="text-emerald-200/60 font-medium text-sm">Sua carteira de indicadores. Toque em um cartão para abrir o extrato.</p>
+        </div>
+
+        <!-- Filtro de Data -->
+        <div class="filter-bar relative z-10 w-full lg:w-auto flex items-center gap-2">
+            <div class="pl-2 text-slate-400"><i class="fa-regular fa-calendar-days text-lg"></i></div>
+            <select id="filtroMes" onchange="aplicarFiltro()" class="cursor-pointer appearance-auto bg-transparent border-none min-w-[150px]">
+                <option value="Todos">Carregando...</option>
+            </select>
+        </div>
+    </header>
+
+    <!-- 4 CARTÕES ESTILO CARTÃO DE BANCO -->
+    <section class="card-wall grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+
+        <div onclick="abrirModalDetalhes('saldo')" data-type="saldo" class="bank-card text-emerald-50">
+            <div class="bank-card-inner">
+                <div class="bank-card-shine"></div>
+                <div class="bank-card-glare"></div>
+                <div class="bank-card-flash"></div>
+
+                <div class="bank-card-row-top">
+                    <div class="bank-card-chip"><span class="chip-mid"></span><span class="chip-vert"></span></div>
+                    <i class="fa-solid fa-wifi bank-card-wave"></i>
+                </div>
+
+                <div>
+                    <p class="bank-card-eyebrow mb-1"><i class="fa-solid fa-building-columns mr-1"></i> Saldo em Caixa</p>
+                    <h2 class="bank-card-value text-3xl" id="kpi-saldo" data-raw="0">R$ 0,00</h2>
+                </div>
+
+                <div class="bank-card-row-bottom">
+                    <div>
+                        <div class="bank-card-number mb-1">•••• •••• •••• 0001</div>
+                        <div class="bank-card-holder">Conta Principal</div>
+                    </div>
+                    <div class="bank-card-brand"><span class="c1"></span><span class="c2"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <div onclick="abrirModalDetalhes('entradas')" data-type="entradas" class="bank-card text-blue-50">
+            <div class="bank-card-inner">
+                <div class="bank-card-shine"></div>
+                <div class="bank-card-glare"></div>
+                <div class="bank-card-flash"></div>
+
+                <div class="bank-card-row-top">
+                    <div class="bank-card-chip"><span class="chip-mid"></span><span class="chip-vert"></span></div>
+                    <i class="fa-solid fa-wifi bank-card-wave"></i>
+                </div>
+
+                <div>
+                    <p class="bank-card-eyebrow mb-1"><i class="fa-solid fa-arrow-up mr-1"></i> Entradas (Pagas)</p>
+                    <h2 class="bank-card-value text-2xl" id="kpi-receita" data-raw="0">R$ 0,00</h2>
+                </div>
+
+                <div class="bank-card-row-bottom">
+                    <div>
+                        <div class="bank-card-number mb-1">•••• •••• •••• 0002</div>
+                        <div class="bank-card-holder">Receitas</div>
+                    </div>
+                    <div class="bank-card-brand"><span class="c1"></span><span class="c2"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <div onclick="abrirModalDetalhes('saidas')" data-type="saidas" class="bank-card text-red-50">
+            <div class="bank-card-inner">
+                <div class="bank-card-shine"></div>
+                <div class="bank-card-glare"></div>
+                <div class="bank-card-flash"></div>
+
+                <div class="bank-card-row-top">
+                    <div class="bank-card-chip"><span class="chip-mid"></span><span class="chip-vert"></span></div>
+                    <i class="fa-solid fa-wifi bank-card-wave"></i>
+                </div>
+
+                <div>
+                    <p class="bank-card-eyebrow mb-1"><i class="fa-solid fa-arrow-down mr-1"></i> Saídas (Pagas)</p>
+                    <h2 class="bank-card-value text-2xl" id="kpi-despesa" data-raw="0">R$ 0,00</h2>
+                </div>
+
+                <div class="bank-card-row-bottom">
+                    <div>
+                        <div class="bank-card-number mb-1">•••• •••• •••• 0003</div>
+                        <div class="bank-card-holder">Despesas</div>
+                    </div>
+                    <div class="bank-card-brand"><span class="c1"></span><span class="c2"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <div onclick="abrirModalDetalhes('receber')" data-type="receber" class="bank-card text-amber-50">
+            <div class="bank-card-inner">
+                <div class="bank-card-shine"></div>
+                <div class="bank-card-glare"></div>
+                <div class="bank-card-flash"></div>
+
+                <div class="bank-card-row-top">
+                    <div class="bank-card-chip"><span class="chip-mid"></span><span class="chip-vert"></span></div>
+                    <i class="fa-solid fa-wifi bank-card-wave"></i>
+                </div>
+
+                <div>
+                    <p class="bank-card-eyebrow mb-1"><i class="fa-solid fa-clock mr-1"></i> A Receber (Pendentes)</p>
+                    <h2 class="bank-card-value text-2xl" id="kpi-receber" data-raw="0">R$ 0,00</h2>
+                </div>
+
+                <div class="bank-card-row-bottom">
+                    <div>
+                        <div class="bank-card-number mb-1">•••• •••• •••• 0004</div>
+                        <div class="bank-card-holder">Pendentes</div>
+                    </div>
+                    <div class="bank-card-brand"><span class="c1"></span><span class="c2"></span></div>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+        <!-- Gráfico Comparativo -->
+        <div class="lg:col-span-2 glass-card chart-card rounded-2xl p-6 flex flex-col animate-fade-in">
+            <h3 class="text-lg font-semibold mb-4 text-slate-200 border-b border-white/5 pb-2">
+                <i class="fa-solid fa-chart-column text-emerald-400 mr-2"></i> Entradas vs Saídas
+            </h3>
+            <div style="position: relative; height: 350px; width: 100%; flex-1;">
+                <canvas id="chartFluxo"></canvas>
+            </div>
+        </div>
+
+        <!-- Lista Rápida Fixa -->
+        <div class="glass-card rounded-2xl p-0 flex flex-col h-[500px] border-t-4 border-slate-600 overflow-hidden animate-fade-in">
+            <div class="p-4 border-b border-white/5 bg-gradient-to-b from-slate-800/50 to-transparent">
+                <h3 class="text-lg font-bold text-white mb-1"><i class="fa-solid fa-history text-slate-400 mr-2"></i> Histórico Geral</h3>
+                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">Apenas movimentações efetivadas (Pagas)</p>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 custom-scrollbar flex flex-col gap-2" id="lista-extrato-fixa">
+                <div class="text-center p-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DETALHES (TABELA VISUAL) -->
+    <div id="modalDetalhes" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9999] items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div id="modalDetalhesContent" class="bg-[#0f172a] rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden transform scale-95 opacity-0 flex flex-col shadow-2xl border border-white/10">
+            <div id="modalDetalhesHeader" class="p-5 border-b border-white/5 flex justify-between items-center shrink-0">
+                <div>
+                    <h3 id="modalDetalhesTitulo" class="text-xl font-bold text-white font-display">Título</h3>
+                    <p id="modalDetalhesSubtitulo" class="text-[10px] md:text-xs uppercase tracking-widest mt-1 font-bold opacity-70">Subtítulo</p>
+                </div>
+                <button onclick="fecharModalDetalhes()" class="text-slate-400 hover:text-white bg-white/5 w-8 h-8 rounded-full flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-4 md:p-5 bg-[#05050a] flex-1 overflow-hidden flex flex-col">
+                <div class="overflow-y-auto flex-1 pr-2 custom-scrollbar border border-white/5 rounded-xl bg-black/40">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-white/[0.02] sticky top-0 z-10 backdrop-blur-md">
+                            <tr>
+                                <th class="p-3 md:p-4 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-white/5">Data</th>
+                                <th class="p-3 md:p-4 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-white/5">Descrição & Cliente/Cat</th>
+                                <th class="p-3 md:p-4 font-bold uppercase text-[10px] tracking-wider text-right border-b border-white/5" id="modalDetalhesValorHeader">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalDetalhesBody">
+                            <!-- Injetado via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ✅ Dados agora vêm do banco Neon via APIs próprias da Vercel
+    let todasMovimentacoes = [];
+    let movsFiltradasDoMes = [];
+    let graficoFluxo = null;
+
+    function formatMoeda(val) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    }
+    const limpaNum = (val) => {
+        if (val === null || val === undefined || val === '') return 0;
+        if (typeof val === 'number') return val;
+        let v = val.toString().trim().replace(/[^\d.,-]/g, '');
+        if (v.includes(',') && v.includes('.')) {
+            // formato BR completo: 1.234,56 -> ponto é milhar, vírgula é decimal
+            v = v.replace(/\./g, '').replace(',', '.');
+        } else if (v.includes(',')) {
+            // só vírgula -> é o separador decimal
+            v = v.replace(',', '.');
+        }
+        // só ponto (ou nenhum separador) -> já está no formato certo (vindo do banco)
+        return parseFloat(v) || 0;
+    };
+
+    function converterParaDataReal(dataStr) {
+        if (!dataStr) return new Date(0);
+        let texto = dataStr.toString().trim().split(/\s+(?:a|at\u00e9|-|–|—)\s+/i)[0];
+        let p = texto.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if(p) return new Date(p[1], p[2]-1, p[3]);
+        p = texto.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?$/);
+        if(p) {
+            let ano = p[3] || new Date().getFullYear();
+            if(ano.length === 2) ano = `20${ano}`;
+            return new Date(ano, p[2]-1, p[1]);
+        }
+        return new Date(0);
+    }
+
+    function formatMesAno(date) {
+        if (date.getTime() === 0) return 'Sem Data';
+        return `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+    }
+
+    // ---------- Contador animado nos cartões ----------
+    function animarValorCartao(el, novoValor) {
+        const anterior = parseFloat(el.dataset.raw || '0');
+        const destino = novoValor;
+        el.dataset.raw = destino;
+        const duracao = 700;
+        const inicio = performance.now();
+
+        function passo(agora) {
+            const progresso = Math.min((agora - inicio) / duracao, 1);
+            const facilitado = 1 - Math.pow(1 - progresso, 3); // ease-out cubic
+            const atual = anterior + (destino - anterior) * facilitado;
+            el.textContent = formatMoeda(atual);
+            if (progresso < 1) {
+                requestAnimationFrame(passo);
+            } else {
+                el.textContent = formatMoeda(destino);
+            }
+        }
+        requestAnimationFrame(passo);
+    }
+
+    function dispararFlash(cardEl) {
+        cardEl.classList.remove('flash');
+        void cardEl.offsetWidth; // reflow para reiniciar animação
+        cardEl.classList.add('flash');
+    }
+
+    function carregarDados() {
+        const btn = document.getElementById('btnAtualizar');
+        btn.classList.add('spinning');
+        document.getElementById('lista-extrato-fixa').innerHTML = `<div class="text-center p-6 text-slate-500"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><br>Cruzando dados...</div>`;
+
+        Promise.all([
+            fetch('/api/eventos').then(r => { if(!r.ok) throw new Error('Falha eventos'); return r.json(); }),
+            fetch('/api/gastos').then(r => { if(!r.ok) throw new Error('Falha gastos'); return r.json(); })
+        ]).then(([eventos, gastos]) => {
+            todasMovimentacoes = [];
+
+            // Entradas
+            eventos.forEach(e => {
+                let valor = limpaNum(e.valor);
+                let status = (e.status || '').toLowerCase();
+                if(valor > 0 && !status.includes('cancelado')) {
+                    todasMovimentacoes.push({
+                        dataStr: e.data,
+                        dataReal: converterParaDataReal(e.data),
+                        descricao: e.evento || 'Evento Sem Nome',
+                        cliente_cat: e.cliente || '',
+                        valor: valor,
+                        tipo: 'receita',
+                        status: e.status || 'Pendente'
+                    });
+                }
+            });
+
+            // Saídas
+            gastos.forEach(g => {
+                let valor = limpaNum(g.valor);
+                if(valor > 0) {
+                    todasMovimentacoes.push({
+                        dataStr: g.data,
+                        dataReal: converterParaDataReal(g.data),
+                        descricao: g.descricao || 'Despesa',
+                        cliente_cat: g.categoria || '',
+                        valor: valor,
+                        tipo: 'despesa',
+                        status: g.status || 'Pendente'
+                    });
+                }
+            });
+
+            // Preencher Filtro de Mês
+            const todosMeses = new Set(todasMovimentacoes.map(m => formatMesAno(m.dataReal)));
+            const selectFiltro = document.getElementById('filtroMes');
+            let valorAntigo = selectFiltro.value;
+            selectFiltro.innerHTML = `<option value="Todos">Todos os Meses</option>`;
+
+            Array.from(todosMeses).filter(m => m !== 'Sem Data').sort((a,b) => {
+                let pa = a.split('/'); let pb = b.split('/');
+                return new Date(pb[1], pb[0]-1) - new Date(pa[1], pa[0]-1);
+            }).forEach(mes => {
+                selectFiltro.innerHTML += `<option value="${mes}">${mes}</option>`;
+            });
+
+            if(valorAntigo !== 'Carregando...' && valorAntigo !== 'Todos' && Array.from(todosMeses).includes(valorAntigo)) {
+                selectFiltro.value = valorAntigo;
+            }
+
+            aplicarFiltro();
+            btn.classList.remove('spinning');
+
+        }).catch(() => {
+            document.getElementById('lista-extrato-fixa').innerHTML = `<div class="p-6 text-center text-red-500">Erro de conexão.</div>`;
+            btn.classList.remove('spinning');
+        });
+    }
+
+    function aplicarFiltro() {
+        const mesSel = document.getElementById('filtroMes').value;
+
+        movsFiltradasDoMes = todasMovimentacoes;
+        if (mesSel !== 'Todos') {
+            movsFiltradasDoMes = todasMovimentacoes.filter(m => formatMesAno(m.dataReal) === mesSel);
+        }
+
+        let totalReceitaPaga = 0;
+        let totalDespesaPaga = 0;
+        let totalAReceber = 0;
+
+        movsFiltradasDoMes.forEach(m => {
+            let statusLimpo = (m.status || '').toLowerCase();
+            if (m.tipo === 'receita') {
+                if (statusLimpo === 'pago') totalReceitaPaga += m.valor;
+                else totalAReceber += m.valor;
+            } else if (m.tipo === 'despesa') {
+                if (statusLimpo === 'pago') totalDespesaPaga += m.valor;
+            }
+        });
+
+        const elSaldo = document.getElementById('kpi-saldo');
+        const elReceita = document.getElementById('kpi-receita');
+        const elDespesa = document.getElementById('kpi-despesa');
+        const elReceber = document.getElementById('kpi-receber');
+
+        animarValorCartao(elSaldo, totalReceitaPaga - totalDespesaPaga);
+        animarValorCartao(elReceita, totalReceitaPaga);
+        animarValorCartao(elDespesa, totalDespesaPaga);
+        animarValorCartao(elReceber, totalAReceber);
+
+        document.querySelectorAll('.bank-card').forEach(dispararFlash);
+
+        atualizarGrafico(movsFiltradasDoMes);
+
+        // Atualiza a lista rápida da lateral - AGORA FILTRANDO APENAS OS "PAGOS"
+        let listaRapida = [...movsFiltradasDoMes]
+            .filter(m => (m.status || '').toLowerCase() === 'pago')
+            .sort((a, b) => b.dataReal - a.dataReal);
+
+        let htmlRapido = '';
+        listaRapida.slice(0, 30).forEach((m, idx) => {
+            let isEntrada = m.tipo === 'receita';
+            let classeBox = isEntrada ? 'mov-entrada' : 'mov-saida';
+            let corValor = isEntrada ? 'text-emerald-400' : 'text-red-400';
+            let sinal = isEntrada ? '+' : '-';
+
+            htmlRapido += `
+                <div class="${classeBox} rounded-xl p-3 flex justify-between items-center group animate-fade-in" style="animation-delay:${Math.min(idx * 0.03, 0.6)}s">
+                    <div class="min-w-0 pr-2">
+                        <h4 class="font-bold text-white text-sm truncate">${m.descricao}</h4>
+                        <div class="text-[10px] text-slate-400 mt-1 truncate"><i class="fa-regular fa-calendar mr-1"></i> ${m.dataStr}</div>
+                    </div>
+                    <div class="text-right whitespace-nowrap">
+                        <span class="font-black ${corValor} block">${sinal} ${formatMoeda(m.valor)}</span>
+                        <span class="text-[8px] uppercase tracking-widest font-bold text-slate-500 mt-0.5 block">${m.tipo}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        if(listaRapida.length === 0) htmlRapido = `<div class="text-center p-6 text-slate-500"><i class="fa-solid fa-history text-3xl mb-2 opacity-50"></i><br>Sem movimentações pagas neste mês.</div>`;
+
+        document.getElementById('lista-extrato-fixa').innerHTML = htmlRapido;
+    }
+
+    function atualizarGrafico(movs) {
+        let graficoDados = {};
+        movs.forEach(m => {
+            if((m.status || '').toLowerCase() === 'pago') {
+                let mesAno = m.dataReal.getTime() === 0 ? 'Sem Data' : `${String(m.dataReal.getMonth() + 1).padStart(2, '0')}/${m.dataReal.getFullYear()}`;
+                if(!graficoDados[mesAno]) graficoDados[mesAno] = { receita: 0, despesa: 0 };
+                if(m.tipo === 'receita') graficoDados[mesAno].receita += m.valor;
+                else graficoDados[mesAno].despesa += m.valor;
+            }
+        });
+
+        let labelsMeses = Object.keys(graficoDados).filter(k => k !== 'Sem Data').sort((a,b) => {
+            let pa = a.split('/'); let pb = b.split('/');
+            return new Date(pa[1], pa[0]-1) - new Date(pb[1], pb[0]-1);
+        });
+
+        let dadosReceita = labelsMeses.map(m => graficoDados[m].receita);
+        let dadosDespesa = labelsMeses.map(m => graficoDados[m].despesa);
+
+        if(labelsMeses.length === 0) { labelsMeses = ['Sem Dados']; dadosReceita = [0]; dadosDespesa = [0]; }
+
+        const ctx = document.getElementById('chartFluxo');
+        if (graficoFluxo) graficoFluxo.destroy();
+
+        graficoFluxo = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: labelsMeses, datasets: [ { label: 'Entradas (R$)', data: dadosReceita, backgroundColor: 'rgba(59, 130, 246, 0.8)', borderRadius: 4 }, { label: 'Saídas (R$)', data: dadosDespesa, backgroundColor: 'rgba(239, 68, 68, 0.8)', borderRadius: 4 } ] },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                animation: { duration: 800, easing: 'easeOutCubic' },
+                plugins: { legend: { position: 'top', labels: { color: '#cbd5e1', font: {size: 11, weight: 'bold'} } } },
+                scales: { x: { grid: { display: false, color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } }, y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } } }
+            }
+        });
+    }
+
+    // --- LÓGICA DO MODAL DETALHADO ---
+    const modalDetalhes = document.getElementById('modalDetalhes');
+    const modalDetalhesContent = document.getElementById('modalDetalhesContent');
+
+    function abrirModalDetalhes(tipo) {
+        let titulo = '', subtitulo = '', icone = '', corTema = '', bgHeader = '';
+        let lista = [];
+
+        if (tipo === 'saldo') {
+            lista = movsFiltradasDoMes.filter(m => (m.status || '').toLowerCase() === 'pago');
+            titulo = 'Extrato Consolidado'; subtitulo = 'Todas as entradas e saídas pagas';
+            icone = 'fa-building-columns'; corTema = 'text-emerald-400'; bgHeader = 'bg-emerald-900/20';
+        }
+        else if (tipo === 'entradas') {
+            lista = movsFiltradasDoMes.filter(m => m.tipo === 'receita' && (m.status || '').toLowerCase() === 'pago');
+            titulo = 'Receitas Pagas'; subtitulo = 'Eventos finalizados e pagos pelo cliente';
+            icone = 'fa-arrow-up'; corTema = 'text-blue-400'; bgHeader = 'bg-blue-900/20';
+        }
+        else if (tipo === 'saidas') {
+            lista = movsFiltradasDoMes.filter(m => m.tipo === 'despesa' && (m.status || '').toLowerCase() === 'pago');
+            titulo = 'Despesas Pagas'; subtitulo = 'Gastos que já saíram do caixa';
+            icone = 'fa-arrow-down'; corTema = 'text-red-400'; bgHeader = 'bg-red-900/20';
+        }
+        else if (tipo === 'receber') {
+            lista = movsFiltradasDoMes.filter(m => m.tipo === 'receita' && (m.status || '').toLowerCase() !== 'pago');
+            titulo = 'Valores a Receber'; subtitulo = 'Eventos agendados/concluídos aguardando pagamento';
+            icone = 'fa-hourglass-half'; corTema = 'text-yellow-400'; bgHeader = 'bg-yellow-900/20';
+        }
+
+        lista.sort((a, b) => b.dataReal - a.dataReal);
+
+        document.getElementById('modalDetalhesTitulo').innerHTML = `<i class="fa-solid ${icone} ${corTema} mr-2"></i> ${titulo}`;
+        document.getElementById('modalDetalhesSubtitulo').innerText = subtitulo;
+        document.getElementById('modalDetalhesSubtitulo').className = `text-[10px] md:text-xs uppercase tracking-widest mt-1 font-bold ${corTema}`;
+        document.getElementById('modalDetalhesHeader').className = `p-5 border-b border-white/5 flex justify-between items-center shrink-0 ${bgHeader}`;
+        document.getElementById('modalDetalhesValorHeader').className = `p-3 md:p-4 font-bold uppercase text-[10px] tracking-wider text-right border-b border-white/5 ${corTema}`;
+
+        let htmlTabela = '';
+        if(lista.length === 0) {
+            htmlTabela = `<tr><td colspan="3" class="text-center text-slate-500 py-12"><i class="fa-solid fa-folder-open text-3xl mb-3 opacity-30"></i><br>Nenhum dado encontrado para este filtro.</td></tr>`;
+        } else {
+            lista.forEach((m, idx) => {
+                let isEntrada = m.tipo === 'receita';
+                let sinal = isEntrada ? '+' : '-';
+                let iconeSub = isEntrada ? 'fa-user' : 'fa-tag';
+
+                let corItem = corTema;
+                if(tipo === 'saldo') {
+                    corItem = isEntrada ? 'text-emerald-400' : 'text-red-400';
+                } else if (tipo === 'receber') {
+                    sinal = '';
+                }
+
+                htmlTabela += `
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition-colors" style="animation-delay:${Math.min(idx * 0.025, 0.5)}s">
+                        <td class="p-3 md:p-4 text-slate-400 whitespace-nowrap text-xs md:text-sm">${m.dataStr}</td>
+                        <td class="p-3 md:p-4">
+                            <div class="font-bold text-white text-sm md:text-base">${m.descricao}</div>
+                            <div class="text-[10px] ${corItem} mt-0.5 uppercase tracking-wider font-bold"><i class="fa-solid ${iconeSub} mr-1"></i> ${m.cliente_cat}</div>
+                        </td>
+                        <td class="p-3 md:p-4 text-right font-black ${corItem} whitespace-nowrap text-sm md:text-base">${sinal} ${formatMoeda(m.valor)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('modalDetalhesBody').innerHTML = htmlTabela;
+
+        modalDetalhes.classList.remove('hidden');
+        setTimeout(() => { modalDetalhes.classList.add('modal-active'); modalDetalhesContent.classList.add('modal-content-active'); }, 10);
+    }
+
+    function fecharModalDetalhes() {
+        modalDetalhes.classList.remove('modal-active'); modalDetalhesContent.classList.remove('modal-content-active');
+        setTimeout(() => { modalDetalhes.classList.add('hidden'); }, 300);
+    }
+
+    modalDetalhes.addEventListener('click', (e) => { if (e.target === modalDetalhes) fecharModalDetalhes(); });
+
+    // --- INTERAÇÃO 3D DOS CARTÕES (tilt + brilho seguindo o cursor) ---
+    function iniciarInteracaoCartoes() {
+        const cartoes = document.querySelectorAll('.bank-card');
+        cartoes.forEach(cartao => {
+            cartao.classList.add('card-in');
+
+            cartao.addEventListener('mousemove', (e) => {
+                const rect = cartao.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const px = (x / rect.width) * 100;
+                const py = (y / rect.height) * 100;
+
+                const rotY = ((x / rect.width) - 0.5) * 14; // esquerda/direita
+                const rotX = ((y / rect.height) - 0.5) * -14; // cima/baixo
+
+                cartao.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.03,1.03,1.03)`;
+                const shine = cartao.querySelector('.bank-card-shine');
+                if (shine) {
+                    shine.style.setProperty('--mx', `${px}%`);
+                    shine.style.setProperty('--my', `${py}%`);
+                }
+            });
+
+            cartao.addEventListener('mouseleave', () => {
+                cartao.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
+            });
+
+            cartao.addEventListener('touchstart', () => {
+                dispararFlash(cartao);
+            }, { passive: true });
+        });
+    }
+
+    window.onload = () => {
+        iniciarInteracaoCartoes();
+        carregarDados();
+    };
+</script>
+</body>
+</html>
