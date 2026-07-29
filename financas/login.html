@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Painel Financeiro</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 32%), radial-gradient(circle at top right, rgba(139,92,246,0.12), transparent 30%), #05050a;
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0; pointer-events: none;
+            background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 78%);
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        input {
+            background-color: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            padding: 12px 16px;
+            border-radius: 10px;
+            outline: none;
+            font-weight: 600;
+            width: 100%;
+            transition: border-color .2s ease;
+        }
+        input:focus { border-color: #3b82f6; }
+
+        .btn-entrar {
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            border: 1px solid rgba(147,197,253,0.35);
+            box-shadow: 0 14px 35px rgba(37,99,235,0.25);
+            transition: all .2s ease;
+        }
+        .btn-entrar:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124,58,237,0.28); }
+        .btn-entrar:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        .erro-shake { animation: shake 0.4s ease; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="login-card w-full max-w-sm p-8 animate-fade-in">
+        <div class="flex flex-col items-center mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#8b5cf6] to-[#3b82f6] flex items-center justify-center text-white text-2xl shadow-[0_0_20px_rgba(139,92,246,0.4)] mb-4">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h1 class="text-xl font-black text-white text-center">Painel Financeiro</h1>
+            <p class="text-slate-400 text-sm text-center mt-1">Entre com suas credenciais para continuar</p>
+        </div>
+
+        <form id="formLogin" class="flex flex-col gap-4">
+            <div>
+                <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Usuário</label>
+                <input type="text" id="campoUsuario" name="usuario" autocomplete="username" required>
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Senha</label>
+                <input type="password" id="campoSenha" name="senha" autocomplete="current-password" required>
+            </div>
+
+            <div id="mensagemErro" class="hidden text-red-400 text-sm font-semibold bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+                <i class="fa-solid fa-triangle-exclamation mr-1"></i> <span id="textoErro">Usuário ou senha inválidos</span>
+            </div>
+
+            <button type="submit" id="btnEntrar" class="btn-entrar text-white p-3 rounded-xl font-bold text-base mt-2 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-right-to-bracket"></i> <span>Entrar</span>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('formLogin');
+        const btnEntrar = document.getElementById('btnEntrar');
+        const mensagemErro = document.getElementById('mensagemErro');
+        const textoErro = document.getElementById('textoErro');
+        const card = document.querySelector('.login-card');
+
+        // Se veio de um redirecionamento com destino salvo, volta pra lá depois do login
+        const params = new URLSearchParams(window.location.search);
+        const destino = params.get('destino') || 'index.html';
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            mensagemErro.classList.add('hidden');
+            btnEntrar.disabled = true;
+            btnEntrar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Entrando...</span>';
+
+            const usuario = document.getElementById('campoUsuario').value;
+            const senha = document.getElementById('campoSenha').value;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, senha })
+                });
+
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    textoErro.textContent = data.error || 'Usuário ou senha inválidos';
+                    mensagemErro.classList.remove('hidden');
+                    card.classList.add('erro-shake');
+                    setTimeout(() => card.classList.remove('erro-shake'), 400);
+                    btnEntrar.disabled = false;
+                    btnEntrar.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> <span>Entrar</span>';
+                    return;
+                }
+
+                window.location.href = destino;
+            } catch (err) {
+                textoErro.textContent = 'Erro de conexão. Tente novamente.';
+                mensagemErro.classList.remove('hidden');
+                btnEntrar.disabled = false;
+                btnEntrar.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> <span>Entrar</span>';
+            }
+        });
+    </script>
+</body>
+</html>
