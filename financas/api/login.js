@@ -18,7 +18,6 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Usuário ou senha inválidos' });
   }
 
-  // Sessão válida por 7 dias
   const exp = Date.now() + 1000 * 60 * 60 * 24 * 7;
 
   const encoder = new TextEncoder();
