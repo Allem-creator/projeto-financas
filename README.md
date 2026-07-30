@@ -22,7 +22,7 @@ Este projeto nasceu da necessidade de criar uma solução visual, intuitiva e pr
 
 ## 🛠️ Tecnologias Utilizadas
 
-* **Frontend:** HTML5, CSS3
+* **Frontend:** HTML5, JAVASCRIPT
 * **Banco de Dados:** Neon (PostgreSQL) *(Iniciado com Google Sheets e migrado para maior robustez)*
 * **Hospedagem & Deploy:** Vercel
 
