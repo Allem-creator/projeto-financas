@@ -127,6 +127,9 @@
         <button onclick="abrirModalForm()" class="btn-primary text-white px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold transition flex items-center gap-2 text-sm md:text-base shrink-0">
             <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Novo Evento</span>
         </button>
+        <button onclick="fetch('/api/logout', {method:'POST'}).then(() => location.href='/login.html')" class="bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl px-3 py-2 font-bold transition border border-white/10" title="Sair">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
     </nav>
     <!-- FIM DA BARRA DE NAVEGAÇÃO -->
 
