@@ -214,13 +214,14 @@
                 </a>
             </div>
         </div>
-
-        <button id="btnAtualizar" onclick="carregarDados()" class="btn-refresh bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 border border-white/10 shrink-0">
-            <i class="fa-solid fa-rotate-right"></i> <span class="hidden sm:inline">Atualizar</span>
-        </button>
-        <button onclick="fetch('/api/logout', {method:'POST'}).then(() => location.href='/login.html')" class="bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl px-3 py-2 font-bold transition border border-white/10" title="Sair">
-            <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
+            <div class="flex items-center gap-2">
+            <button id="btnAtualizar" onclick="carregarDados()" class="btn-refresh bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-xl font-bold transition flex items-center gap-2 border border-white/10 shrink-0">
+                <i class="fa-solid fa-rotate-right"></i> <span class="hidden sm:inline">Atualizar</span>
+            </button>
+            <button onclick="fetch('/api/logout', {method:'POST'}).then(() => location.href='/login.html')" class="bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl px-3 py-2 font-bold transition border border-white/10" title="Sair">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
     </nav>
 
     <!-- HEADER COM FILTRO DE MÊS -->
