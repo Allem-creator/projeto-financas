@@ -9,96 +9,206 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
+        :root{
+            --void:#05050a;
+            --sapphire:#122a63;
+            --sapphire2:#0a1638;
+            --blue:#3b82f6;
+            --violet:#7c3aed;
+        }
+
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        html, body { height: 100%; }
         body {
             font-family: 'Inter', sans-serif;
-            background: radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 32%), radial-gradient(circle at top right, rgba(139,92,246,0.12), transparent 30%), #05050a;
+            background: radial-gradient(circle at 15% 8%, rgba(59,130,246,0.14), transparent 38%), radial-gradient(circle at 85% 92%, rgba(124,58,237,0.12), transparent 38%), var(--void);
             color: #f8fafc;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            position: relative;
         }
+        .font-display { font-family: 'Sora', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
         body::before {
             content: '';
             position: fixed; inset: 0; pointer-events: none;
             background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-            background-size: 42px 42px;
-            mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 78%);
+            background-size: 46px 46px;
+            mask-image: radial-gradient(circle at 50% 40%, rgba(0,0,0,0.9), transparent 72%);
         }
 
-        .login-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(16px);
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        .orb { position: fixed; border-radius: 999px; filter: blur(50px); opacity: .35; pointer-events: none; z-index: 0; }
+        .orb-1 { width: 340px; height: 340px; background: var(--sapphire); top: -80px; left: -100px; animation: floatSlow 14s ease-in-out infinite; }
+        .orb-2 { width: 280px; height: 280px; background: var(--violet); bottom: -100px; right: -80px; animation: floatSlow 17s ease-in-out infinite reverse; }
+        @keyframes floatSlow { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(30px,-24px) scale(1.08); } }
+
+        .scan-line { position: fixed; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(96,165,250,0.55), transparent); animation: scanMove 6s linear infinite; pointer-events: none; z-index: 1; }
+        @keyframes scanMove { 0% { top: -5%; opacity: 0; } 8% { opacity: .8; } 92% { opacity: .8; } 100% { top: 105%; opacity: 0; } }
+
+        .stage { position: relative; z-index: 2; width: 100%; max-width: 380px; padding: 0 16px; perspective: 1200px; }
+
+        .terminal-card {
+            position: relative;
+            border-radius: 26px;
+            background: radial-gradient(140% 160% at 15% -10%, var(--sapphire), var(--sapphire2) 65%);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 30px 70px -18px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08);
+            padding: 30px 26px 26px;
+            transform-style: preserve-3d;
+            transition: transform .15s ease-out;
+            animation: cardEntrance .7s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        @keyframes cardEntrance { from { opacity: 0; transform: translateY(40px) rotateX(14deg) scale(.94); } to { opacity: 1; transform: translateY(0) rotateX(0) scale(1); } }
+        .terminal-card::before {
+            content: '';
+            position: absolute; inset: 0; border-radius: 26px;
+            background-image: repeating-linear-gradient(115deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 8px);
+            pointer-events: none;
+        }
+        .terminal-shine {
+            position: absolute; inset: 0; border-radius: 26px; pointer-events: none;
+            background: radial-gradient(280px circle at var(--mx,50%) var(--my,15%), rgba(255,255,255,0.14), transparent 55%);
+            mix-blend-mode: overlay;
         }
 
-        input {
-            background-color: #1e293b;
-            color: #f8fafc;
-            border: 1px solid #475569;
-            padding: 12px 16px;
-            border-radius: 10px;
-            outline: none;
-            font-weight: 600;
+        .card-top-row { display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 2; margin-bottom: 22px; }
+        .chip { width: 42px; height: 32px; border-radius: 7px; background: linear-gradient(140deg,#f6e6a8,#d4af37 45%,#8a6d1f); position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.3); }
+        .chip::before, .chip::after { content:''; position:absolute; left:6px; right:6px; height:1px; background: rgba(0,0,0,0.35); }
+        .chip::before { top: 9px; } .chip::after { top: 22px; }
+        .signal-wave { display: flex; gap: 3px; align-items: flex-end; height: 18px; }
+        .signal-wave span { width: 3px; background: rgba(147,197,253,0.85); border-radius: 2px; animation: waveBar 1.4s ease-in-out infinite; }
+        .signal-wave span:nth-child(1) { height: 6px; animation-delay: 0s; }
+        .signal-wave span:nth-child(2) { height: 11px; animation-delay: .15s; }
+        .signal-wave span:nth-child(3) { height: 16px; animation-delay: .3s; }
+        .signal-wave span:nth-child(4) { height: 11px; animation-delay: .45s; }
+        @keyframes waveBar { 0%,100% { opacity: .35; transform: scaleY(.7); } 50% { opacity: 1; transform: scaleY(1); } }
+
+        .titulo-terminal { position: relative; z-index: 2; margin-bottom: 4px; }
+        .titulo-terminal h1 { font-size: 21px; letter-spacing: -0.01em; }
+        .titulo-terminal p { color: rgba(191,219,254,0.65); font-size: 12.5px; margin-top: 2px; }
+
+        .card-number-mask { font-family: 'JetBrains Mono', monospace; letter-spacing: .18em; font-size: 13px; color: rgba(191,219,254,0.4); margin: 18px 0 22px; position: relative; z-index: 2; }
+
+        .campo-flutuante { position: relative; z-index: 2; margin-bottom: 16px; }
+        .campo-flutuante input {
             width: 100%;
-            transition: border-color .2s ease;
+            background: rgba(5,10,25,0.55);
+            border: 1px solid rgba(148,163,184,0.22);
+            border-radius: 12px;
+            padding: 17px 14px 7px;
+            color: #f8fafc;
+            font-weight: 600;
+            font-size: 15px;
+            outline: none;
+            transition: border-color .2s ease, background .2s ease, transform .15s ease;
         }
-        input:focus { border-color: #3b82f6; }
+        .campo-flutuante input:focus { border-color: rgba(96,165,250,0.85); background: rgba(5,10,25,0.75); transform: translateY(-1px); }
+        .campo-flutuante label {
+            position: absolute; left: 15px; top: 14px;
+            font-size: 13px; color: rgba(148,163,184,0.75); font-weight: 600;
+            transition: all .18s ease; pointer-events: none; transform-origin: left top;
+        }
+        .campo-flutuante input:focus + label,
+        .campo-flutuante input.tem-valor + label {
+            top: 6px; font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; color: #93c5fd;
+        }
+        .campo-flutuante .icone-campo { position: absolute; right: 14px; top: 15px; color: rgba(148,163,184,0.55); font-size: 14px; pointer-events: none; transition: color .2s ease; }
+        .campo-flutuante input:focus ~ .icone-campo { color: #60a5fa; }
 
-        .btn-entrar {
+        .btn-tap {
+            position: relative; overflow: hidden;
+            width: 100%;
             background: linear-gradient(135deg, #2563eb, #7c3aed);
             border: 1px solid rgba(147,197,253,0.35);
-            box-shadow: 0 14px 35px rgba(37,99,235,0.25);
-            transition: all .2s ease;
+            box-shadow: 0 14px 35px rgba(37,99,235,0.3);
+            color: #fff; font-weight: 800; font-size: 15px;
+            border-radius: 14px; padding: 15px;
+            display: flex; align-items: center; justify-content: center; gap: 9px;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+            margin-top: 6px; cursor: pointer;
         }
-        .btn-entrar:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124,58,237,0.28); }
-        .btn-entrar:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        .btn-tap:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(124,58,237,0.35); }
+        .btn-tap:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+        .btn-tap.sucesso { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 14px 35px rgba(16,185,129,0.3); }
 
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .flash-tap { position: absolute; inset: 0; border-radius: 26px; background: rgba(96,165,250,0.35); opacity: 0; pointer-events: none; }
+        .terminal-card.tap .flash-tap { animation: flashPulse .5s ease; }
+        @keyframes flashPulse { 0% { opacity: .6; } 100% { opacity: 0; } }
 
-        .erro-shake { animation: shake 0.4s ease; }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-6px); }
-            75% { transform: translateX(6px); }
+        .mensagem-erro {
+            display: none; align-items: center; gap: 8px;
+            background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35);
+            color: #fca5a5; font-size: 12.5px; font-weight: 700;
+            border-radius: 10px; padding: 9px 12px; margin-top: 12px; position: relative; z-index: 2;
+        }
+        .mensagem-erro.ativa { display: flex; }
+
+        .erro-shake { animation: shake 0.45s ease; }
+        @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(3px); } }
+
+        .rodape-terminal { text-align: center; margin-top: 18px; color: rgba(148,163,184,0.45); font-size: 11px; letter-spacing: .05em; position: relative; z-index: 2; }
+
+        .ripple-span { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.4); transform: scale(0); animation: rippleAnim .6s ease-out; pointer-events: none; }
+        @keyframes rippleAnim { to { transform: scale(2.6); opacity: 0; } }
+
+        :focus-visible { outline: 2px solid rgba(96,165,250,0.9); outline-offset: 2px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation: none !important; transition: none !important; }
         }
     </style>
 </head>
-<body class="p-4">
+<body>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="scan-line"></div>
 
-    <div class="login-card w-full max-w-sm p-8 animate-fade-in">
-        <div class="flex flex-col items-center mb-6">
-            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#8b5cf6] to-[#3b82f6] flex items-center justify-center text-white text-2xl shadow-[0_0_20px_rgba(139,92,246,0.4)] mb-4">
-                <i class="fa-solid fa-lock"></i>
+    <div class="stage">
+        <div class="terminal-card" id="terminalCard">
+            <div class="terminal-shine" id="terminalShine"></div>
+            <div class="flash-tap"></div>
+
+            <div class="card-top-row">
+                <div class="chip"></div>
+                <div class="signal-wave"><span></span><span></span><span></span><span></span></div>
             </div>
-            <h1 class="text-xl font-black text-white text-center">Painel Financeiro</h1>
-            <p class="text-slate-400 text-sm text-center mt-1">Entre com suas credenciais para continuar</p>
+
+            <div class="titulo-terminal">
+                <h1 class="font-display font-extrabold text-white"><i class="fa-solid fa-lock text-blue-300 mr-2 text-sm"></i>Painel Financeiro</h1>
+                <p>Insira suas credenciais para acessar sua conta</p>
+            </div>
+
+            <div class="card-number-mask">•••• •••• •••• ACESSO</div>
+
+            <form id="formLogin">
+                <div class="campo-flutuante">
+                    <input type="text" id="campoUsuario" name="usuario" autocomplete="username" required>
+                    <label for="campoUsuario">Usuário</label>
+                    <i class="fa-regular fa-user icone-campo"></i>
+                </div>
+                <div class="campo-flutuante">
+                    <input type="password" id="campoSenha" name="senha" autocomplete="current-password" required>
+                    <label for="campoSenha">Senha</label>
+                    <i class="fa-solid fa-key icone-campo"></i>
+                </div>
+
+                <div id="mensagemErro" class="mensagem-erro">
+                    <i class="fa-solid fa-triangle-exclamation"></i> <span id="textoErro">Usuário ou senha inválidos</span>
+                </div>
+
+                <button type="submit" id="btnEntrar" class="btn-tap">
+                    <i class="fa-solid fa-right-to-bracket"></i> <span>Entrar</span>
+                </button>
+            </form>
         </div>
 
-        <form id="formLogin" class="flex flex-col gap-4">
-            <div>
-                <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Usuário</label>
-                <input type="text" id="campoUsuario" name="usuario" autocomplete="username" required>
-            </div>
-            <div>
-                <label class="text-xs text-slate-400 font-bold uppercase mb-1 block">Senha</label>
-                <input type="password" id="campoSenha" name="senha" autocomplete="current-password" required>
-            </div>
-
-            <div id="mensagemErro" class="hidden text-red-400 text-sm font-semibold bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-                <i class="fa-solid fa-triangle-exclamation mr-1"></i> <span id="textoErro">Usuário ou senha inválidos</span>
-            </div>
-
-            <button type="submit" id="btnEntrar" class="btn-entrar text-white p-3 rounded-xl font-bold text-base mt-2 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-right-to-bracket"></i> <span>Entrar</span>
-            </button>
-        </form>
+        <p class="rodape-terminal">CONEXÃO SEGURA <i class="fa-solid fa-shield-halved mx-1"></i> SESSÃO CRIPTOGRAFADA</p>
     </div>
 
     <script>
@@ -106,17 +216,48 @@
         const btnEntrar = document.getElementById('btnEntrar');
         const mensagemErro = document.getElementById('mensagemErro');
         const textoErro = document.getElementById('textoErro');
-        const card = document.querySelector('.login-card');
+        const terminalCard = document.getElementById('terminalCard');
+        const terminalShine = document.getElementById('terminalShine');
+        const inputs = document.querySelectorAll('.campo-flutuante input');
 
-        // Se veio de um redirecionamento com destino salvo, volta pra lá depois do login
+        terminalCard.addEventListener('mousemove', (e) => {
+            const rect = terminalCard.getBoundingClientRect();
+            const px = ((e.clientX - rect.left) / rect.width) * 100;
+            const py = ((e.clientY - rect.top) / rect.height) * 100;
+            terminalShine.style.setProperty('--mx', `${px}%`);
+            terminalShine.style.setProperty('--my', `${py}%`);
+            const rotY = ((e.clientX - rect.left) / rect.width - 0.5) * 6;
+            const rotX = ((e.clientY - rect.top) / rect.height - 0.5) * -6;
+            terminalCard.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+        });
+        terminalCard.addEventListener('mouseleave', () => { terminalCard.style.transform = 'rotateX(0) rotateY(0)'; });
+
+        inputs.forEach(inp => {
+            const check = () => inp.classList.toggle('tem-valor', inp.value.length > 0);
+            inp.addEventListener('input', check);
+            inp.addEventListener('blur', check);
+        });
+
+        btnEntrar.addEventListener('click', function(e) {
+            const rect = btnEntrar.getBoundingClientRect();
+            const span = document.createElement('span');
+            const size = Math.max(rect.width, rect.height);
+            span.className = 'ripple-span';
+            span.style.width = span.style.height = size + 'px';
+            span.style.left = (e.clientX - rect.left - size / 2) + 'px';
+            span.style.top = (e.clientY - rect.top - size / 2) + 'px';
+            btnEntrar.appendChild(span);
+            setTimeout(() => span.remove(), 650);
+        });
+
         const params = new URLSearchParams(window.location.search);
         const destino = params.get('destino') || 'index.html';
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            mensagemErro.classList.add('hidden');
+            mensagemErro.classList.remove('ativa');
             btnEntrar.disabled = true;
-            btnEntrar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Entrando...</span>';
+            btnEntrar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Verificando...</span>';
 
             const usuario = document.getElementById('campoUsuario').value;
             const senha = document.getElementById('campoSenha').value;
@@ -131,18 +272,21 @@
                 if (!res.ok) {
                     const data = await res.json().catch(() => ({}));
                     textoErro.textContent = data.error || 'Usuário ou senha inválidos';
-                    mensagemErro.classList.remove('hidden');
-                    card.classList.add('erro-shake');
-                    setTimeout(() => card.classList.remove('erro-shake'), 400);
+                    mensagemErro.classList.add('ativa');
+                    terminalCard.classList.add('erro-shake');
+                    setTimeout(() => terminalCard.classList.remove('erro-shake'), 450);
                     btnEntrar.disabled = false;
                     btnEntrar.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> <span>Entrar</span>';
                     return;
                 }
 
-                window.location.href = destino;
+                terminalCard.classList.add('tap');
+                btnEntrar.classList.add('sucesso');
+                btnEntrar.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>Acesso liberado</span>';
+                setTimeout(() => { window.location.href = destino; }, 500);
             } catch (err) {
                 textoErro.textContent = 'Erro de conexão. Tente novamente.';
-                mensagemErro.classList.remove('hidden');
+                mensagemErro.classList.add('ativa');
                 btnEntrar.disabled = false;
                 btnEntrar.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> <span>Entrar</span>';
             }

@@ -11,9 +11,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@300;400;600;800;900&family=JetBrains+Mono:wght@600;700&display=swap');
         
         body { font-family: 'Inter', sans-serif; background: radial-gradient(circle at top left, rgba(239,68,68,0.1), transparent 32%), radial-gradient(circle at top right, rgba(249,115,22,0.1), transparent 30%), #05050a; color: #f8fafc; overflow-x: hidden; }
+        .font-display { font-family: 'Sora', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
         body::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px); background-size: 42px 42px; mask-image: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent 78%); z-index: -1; }
         
         .glass-card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); transition: all 0.3s ease; }
@@ -25,19 +27,25 @@
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(249,115,22,0.28); }
         
         .filter-bar { background: rgba(15,23,42,0.78); border: 1px solid rgba(148,163,184,0.14); border-radius: 18px; padding: 8px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.04); }
-        .search-field { min-width: 220px; background: rgba(15,23,42,0.78); border: 1px solid rgba(148,163,184,0.18); }
+        .search-field { min-width: 220px; background: rgba(15,23,42,0.78); border: 1px solid rgba(148,163,184,0.18); transition: box-shadow .2s ease, border-color .2s ease; }
+        .search-field:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.16); border-color: rgba(248,113,113,0.6); }
         
-        .kpi-card { position: relative; overflow: hidden; isolation: isolate; }
+        .kpi-card { position: relative; overflow: hidden; isolation: isolate; transition: transform .2s ease; }
+        .kpi-card:hover { transform: translateY(-3px); }
         .kpi-card::after { content: ''; position: absolute; inset: auto -40px -70px auto; width: 140px; height: 140px; border-radius: 999px; background: currentColor; opacity: .08; filter: blur(4px); z-index: -1; transition: transform .25s ease; }
+        .kpi-card:hover::after { transform: scale(1.22); }
+        .kpi-valor { font-family: 'JetBrains Mono', monospace; letter-spacing: -0.01em; }
         
         .chart-card { position: relative; overflow: hidden; }
         .chart-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: linear-gradient(90deg, rgba(239,68,68,0.85), rgba(249,115,22,0.75), rgba(234,179,8,0.75)); opacity: .55; }
         
         .status-pago { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
         .status-pendente { background: rgba(245, 158, 11, 0.2); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .status-pago, .status-pendente { transition: transform .18s ease, filter .18s ease; }
+        .status-pago:hover, .status-pendente:hover { transform: scale(1.06); filter: brightness(1.12); }
         
-        select, input { background-color: #1e293b; color: #f8fafc; border: 1px solid #475569; padding: 10px 16px; border-radius: 8px; outline: none; font-weight: 600; width: 100%; }
-        select:focus, input:focus { border-color: #ef4444; }
+        select, input { background-color: #1e293b; color: #f8fafc; border: 1px solid #475569; padding: 10px 16px; border-radius: 8px; outline: none; font-weight: 600; width: 100%; transition: border-color .2s ease, box-shadow .2s ease; }
+        select:focus, input:focus { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.14); }
         
         select option { background-color: #0f172a; color: #f8fafc; font-weight: 600; }
         
@@ -45,17 +53,37 @@
 
         .tab-btn { padding: 10px; text-align: center; font-weight: bold; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s; color: #94a3b8; }
         .tab-btn.active { border-bottom-color: #ef4444; color: #f8fafc; }
+        .tab-btn:hover { color: #f8fafc; }
 
         @keyframes floatOrb { 0%, 100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-16px,18px,0) scale(1.08); } }
         .animate-fade-in { animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
         .modal-active { display: flex !important; animation: fadeIn 0.2s ease forwards; }
-        .modal-content-active { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .modal-content-active { animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(50px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .glass-card.p-3.rounded-xl { transition: transform .18s ease, box-shadow .18s ease; }
+        .glass-card.p-3.rounded-xl:hover { transform: translateX(3px); box-shadow: 0 8px 22px rgba(0,0,0,0.25); }
+
+        :focus-visible { outline: 2px solid rgba(248,113,113,0.9); outline-offset: 2px; border-radius: 6px; }
+        .ripple-btn { position: relative; overflow: hidden; }
+        .ripple-span { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.35); transform: scale(0); animation: rippleAnim .6s ease-out; pointer-events: none; }
+        @keyframes rippleAnim { to { transform: scale(2.5); opacity: 0; } }
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: rgba(15,23,42,0.95); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 14px; padding: 12px 18px; color: #f8fafc; font-weight: 700; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 10px; animation: toastIn .35s cubic-bezier(.16,1,.3,1) forwards; max-width: 320px; }
+        .toast.saindo { animation: toastOut .3s ease forwards; }
+        .toast.sucesso { border-color: rgba(16,185,129,0.4); } .toast.sucesso i { color: #34d399; }
+        .toast.erro { border-color: rgba(239,68,68,0.4); } .toast.erro i { color: #f87171; }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(40px) scale(.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+        @keyframes toastOut { to { opacity: 0; transform: translateX(40px) scale(.95); } }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -68,7 +96,7 @@
                 <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#f97316] to-[#ef4444] flex items-center justify-center text-white font-bold text-xl shadow-[0_0_15px_rgba(239,68,68,0.4)]">
                     <i class="fa-solid fa-receipt"></i>
                 </div>
-                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white hidden sm:block">Gastos</h1>
+                <h1 class="text-xl md:text-2xl font-black tracking-tight text-white hidden sm:block font-display">Gastos</h1>
             </div>
 
             <div class="flex bg-white/5 p-1 rounded-xl border border-white/10 overflow-x-auto max-w-[60vw] md:max-w-none custom-scrollbar">
@@ -84,19 +112,21 @@
             </div>
         </div>
 
-        <button onclick="abrirModalGasto()" class="btn-primary text-white px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold transition flex items-center gap-2 shrink-0">
-            <i class="fa-solid fa-camera"></i> <span class="hidden sm:inline">Nova Despesa</span>
-        </button>
-        <button onclick="fetch('/api/logout', {method:'POST'}).then(() => location.href='/login.html')" class="bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl px-3 py-2 font-bold transition border border-white/10" title="Sair">
-            <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
+        <div class="flex items-center gap-2">
+            <button onclick="abrirModalGasto()" class="ripple-btn btn-primary text-white px-3 py-2 md:px-4 md:py-2 rounded-xl font-bold transition flex items-center gap-2 shrink-0">
+                <i class="fa-solid fa-camera"></i> <span class="hidden sm:inline">Nova Despesa</span>
+            </button>
+            <button onclick="fetch('/api/logout', {method:'POST'}).then(() => location.href='/login.html')" class="ripple-btn bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl px-3 py-2 font-bold transition border border-white/10" title="Sair">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
     </nav>
 
     <!-- HEADER COM FILTRO DE MÊS INCLUÍDO -->
     <header class="hero-panel mb-8 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-5 animate-fade-in">
         <div class="relative z-10">
             <p class="text-[10px] md:text-xs text-orange-300 font-black uppercase tracking-[0.3em] mb-2"><i class="fa-solid fa-wallet mr-2"></i>Controle Financeiro</p>
-            <h2 class="text-2xl md:text-5xl font-black tracking-tight mb-2 bg-gradient-to-r from-white via-orange-100 to-red-300 bg-clip-text text-transparent">Painel de Gastos</h2>
+            <h2 class="text-2xl md:text-5xl font-black tracking-tight mb-2 bg-gradient-to-r from-white via-orange-100 to-red-300 bg-clip-text text-transparent font-display">Painel de Gastos</h2>
             <p class="text-slate-400 font-medium">Cadastre, escaneie cupons e acompanhe suas saídas.</p>
         </div>
         
@@ -111,7 +141,7 @@
                 <select id="filtroMes" onchange="aplicarFiltro()" class="cursor-pointer appearance-auto bg-transparent border-none min-w-[150px]">
                     <option value="Todos">Carregando...</option>
                 </select>
-                <button type="button" onclick="carregarGastos()" class="bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl px-3 py-2 font-bold transition flex items-center gap-2 border border-white/10" title="Atualizar dados"><i class="fa-solid fa-rotate-right"></i></button>
+                <button type="button" onclick="carregarGastos()" class="ripple-btn bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl px-3 py-2 font-bold transition flex items-center gap-2 border border-white/10" title="Atualizar dados"><i class="fa-solid fa-rotate-right"></i></button>
             </div>
         </div>
     </header>
@@ -119,11 +149,11 @@
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="glass-card kpi-card rounded-2xl p-5 border-l-4 border-red-500 text-red-400">
             <p class="text-slate-400 text-[10px] font-bold uppercase mb-1 tracking-widest">Gasto Total</p>
-            <h2 class="text-2xl font-extrabold text-white" id="kpi-total">R$ 0,00</h2>
+            <h2 class="text-2xl font-extrabold text-white kpi-valor" id="kpi-total" data-raw="0">R$ 0,00</h2>
         </div>
         <div class="glass-card kpi-card rounded-2xl p-5 border-l-4 border-orange-500 text-orange-400">
             <p class="text-slate-400 text-[10px] font-bold uppercase mb-1 tracking-widest">Pendente a Pagar</p>
-            <h2 class="text-2xl font-extrabold text-white" id="kpi-pendente">R$ 0,00</h2>
+            <h2 class="text-2xl font-extrabold text-white kpi-valor" id="kpi-pendente" data-raw="0">R$ 0,00</h2>
         </div>
         <div class="glass-card kpi-card rounded-2xl p-5 border-l-4 border-yellow-500 text-yellow-400">
             <p class="text-slate-400 text-[10px] font-bold uppercase mb-1 tracking-widest">Maior Categoria</p>
@@ -131,7 +161,7 @@
         </div>
         <div class="glass-card kpi-card rounded-2xl p-5 border-l-4 border-emerald-500 text-emerald-400">
             <p class="text-slate-400 text-[10px] font-bold uppercase mb-1 tracking-widest">Despesas Pagas</p>
-            <h2 class="text-2xl font-extrabold text-white" id="kpi-pago">R$ 0,00</h2>
+            <h2 class="text-2xl font-extrabold text-white kpi-valor" id="kpi-pago" data-raw="0">R$ 0,00</h2>
         </div>
     </section>
 
@@ -220,7 +250,7 @@
                             </select>
                         </div>
                     </div>
-                    <button type="submit" class="mt-4 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white p-3 rounded-xl font-bold transition-all">
+                    <button type="submit" class="ripple-btn mt-4 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white p-3 rounded-xl font-bold transition-all">
                         <i class="fa-solid fa-floppy-disk mr-2"></i> Salvar Despesa
                     </button>
                 </form>
@@ -255,8 +285,8 @@
                     </div>
 
                     <div class="flex gap-3 mt-2">
-                        <button type="button" onclick="excluirGasto()" id="btnExcluirGasto" class="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white border border-red-600/30 p-3 rounded-xl font-bold transition-all flex-1" title="Apagar Despesa"><i class="fa-solid fa-trash-can"></i> Excluir</button>
-                        <button type="submit" id="btnUpdateGasto" class="bg-orange-600 hover:bg-orange-500 text-white p-3 rounded-xl font-bold transition-all flex-[2]"><i class="fa-solid fa-arrows-rotate"></i> Atualizar</button>
+                        <button type="button" onclick="excluirGasto()" id="btnExcluirGasto" class="ripple-btn bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white border border-red-600/30 p-3 rounded-xl font-bold transition-all flex-1" title="Apagar Despesa"><i class="fa-solid fa-trash-can"></i> Excluir</button>
+                        <button type="submit" id="btnUpdateGasto" class="ripple-btn bg-orange-600 hover:bg-orange-500 text-white p-3 rounded-xl font-bold transition-all flex-[2]"><i class="fa-solid fa-arrows-rotate"></i> Atualizar</button>
                     </div>
                 </form>
             </div>
@@ -266,7 +296,6 @@
 </div>
 
 <script>
-    // ✅ Dados agora vêm do banco Neon via API própria da Vercel
     const urlAPI = '/api/gastos';
 
     let gastosReais = [];
@@ -278,16 +307,58 @@
         if (typeof val === 'number') return val;
         let v = val.toString().trim().replace(/[^\d.,-]/g, '');
         if (v.includes(',') && v.includes('.')) {
-            // formato BR completo: 1.234,56 -> ponto é milhar, vírgula é decimal
             v = v.replace(/\./g, '').replace(',', '.');
         } else if (v.includes(',')) {
-            // só vírgula -> é o separador decimal
             v = v.replace(',', '.');
         }
-            // só ponto (ou nenhum separador) -> já está no formato certo (vindo do banco)
         return parseFloat(v) || 0;
     };
     const normalizarTexto = (val) => (val || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+    function garantirToastContainer() {
+        let c = document.querySelector('.toast-container');
+        if (!c) { c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); }
+        return c;
+    }
+    function mostrarToast(msg, tipo = 'sucesso') {
+        const c = garantirToastContainer();
+        const t = document.createElement('div');
+        t.className = `toast ${tipo}`;
+        const icone = tipo === 'sucesso' ? 'fa-circle-check' : 'fa-triangle-exclamation';
+        t.innerHTML = `<i class="fa-solid ${icone}"></i><span>${msg}</span>`;
+        c.appendChild(t);
+        setTimeout(() => { t.classList.add('saindo'); setTimeout(() => t.remove(), 300); }, 3200);
+    }
+
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.ripple-btn');
+        if (!btn) return;
+        const rect = btn.getBoundingClientRect();
+        const span = document.createElement('span');
+        const size = Math.max(rect.width, rect.height);
+        span.className = 'ripple-span';
+        span.style.width = span.style.height = size + 'px';
+        span.style.left = (e.clientX - rect.left - size/2) + 'px';
+        span.style.top = (e.clientY - rect.top - size/2) + 'px';
+        btn.appendChild(span);
+        setTimeout(() => span.remove(), 650);
+    });
+
+    function animarContador(el, destino, formatarFn) {
+        if (!el) return;
+        const anterior = parseFloat(el.dataset.raw || '0');
+        el.dataset.raw = destino;
+        const duracao = 650;
+        const inicio = performance.now();
+        function passo(agora) {
+            const p = Math.min((agora - inicio) / duracao, 1);
+            const ease = 1 - Math.pow(1 - p, 3);
+            const atual = anterior + (destino - anterior) * ease;
+            el.textContent = formatarFn ? formatarFn(atual) : Math.round(atual);
+            if (p < 1) requestAnimationFrame(passo); else el.textContent = formatarFn ? formatarFn(destino) : destino;
+        }
+        requestAnimationFrame(passo);
+    }
 
     function converterParaDataReal(dataStr) {
         if (!dataStr) return new Date(0);
@@ -330,7 +401,6 @@
                 };
             });
 
-            // Preencher Filtro de Mês
             const todosMeses = new Set(gastosReais.map(g => g.mesAno));
             const selectFiltro = document.getElementById('filtroMes');
             let valorAntigo = selectFiltro.value;
@@ -351,6 +421,7 @@
         })
         .catch(() => {
             document.getElementById('lista-gastos').innerHTML = `<div class="p-6 text-center text-red-500">Erro ao carregar dados.</div>`;
+            mostrarToast('Erro ao carregar gastos', 'erro');
         });
     }
 
@@ -379,7 +450,7 @@
         let categoriasObj = {};
         let htmlLista = '';
 
-        [...gastosFiltrados].sort((a, b) => b.dataReal - a.dataReal).forEach(g => {
+        [...gastosFiltrados].sort((a, b) => b.dataReal - a.dataReal).forEach((g, idx) => {
             total += g.valor;
             if (g.status === 'Pago') pago += g.valor;
             if (g.status === 'Pendente') pendente += g.valor;
@@ -395,7 +466,7 @@
             let statusSafe = g.status || '';
 
             htmlLista += `
-                <div class="glass-card p-3 rounded-xl mb-2 flex justify-between items-center border border-white/5 animate-fade-in group hover:border-white/10">
+                <div class="glass-card p-3 rounded-xl mb-2 flex justify-between items-center border border-white/5 animate-fade-in group hover:border-white/10" style="animation-delay:${Math.min(idx * 0.03, 0.5)}s">
                     <div class="min-w-0 pr-2">
                         <h4 class="font-bold text-white text-sm truncate">${g.descricao}</h4>
                         <div class="text-[10px] text-slate-400 mt-1 truncate"><i class="fa-regular fa-calendar mr-1"></i> ${g.data} &bull; ${g.categoria}</div>
@@ -415,9 +486,9 @@
         }
 
         document.getElementById('lista-gastos').innerHTML = htmlLista;
-        document.getElementById('kpi-total').innerText = formatMoeda(total);
-        document.getElementById('kpi-pendente').innerText = formatMoeda(pendente);
-        document.getElementById('kpi-pago').innerText = formatMoeda(pago);
+        animarContador(document.getElementById('kpi-total'), total, formatMoeda);
+        animarContador(document.getElementById('kpi-pendente'), pendente, formatMoeda);
+        animarContador(document.getElementById('kpi-pago'), pago, formatMoeda);
 
         let maiorCat = Object.keys(categoriasObj).length > 0 
             ? Object.keys(categoriasObj).reduce((a, b) => categoriasObj[a] > categoriasObj[b] ? a : b) 
@@ -435,7 +506,7 @@
         graficoInstance = new Chart(ctx, {
             type: 'doughnut',
             data: { labels: Object.keys(dados), datasets: [{ data: Object.values(dados), backgroundColor: Object.keys(dados)[0] === 'Sem Dados' ? ['#1e293b'] : ['#f97316', '#ef4444', '#eab308', '#3b82f6', '#8b5cf6', '#10b981'], borderWidth: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#cbd5e1', font: {size: 11} } } } }
+            options: { responsive: true, maintainAspectRatio: false, animation: { animateRotate: true, duration: 700 }, plugins: { legend: { position: 'right', labels: { color: '#cbd5e1', font: {size: 11} } } } }
         });
     }
 
@@ -535,8 +606,9 @@
         .then(res => { if (!res.ok) throw new Error('Falha na requisição'); return res.json(); })
         .then(() => {
             btnSubmit.innerHTML = '<i class="fa-solid fa-check mr-2"></i> Salvo!'; btnSubmit.classList.replace('from-red-600', 'from-emerald-500'); btnSubmit.classList.replace('to-orange-500', 'to-emerald-400');
+            mostrarToast('Despesa registrada', 'sucesso');
             setTimeout(() => { fecharModalGasto(); btnSubmit.innerHTML = textoOriginal; btnSubmit.classList.replace('from-emerald-500', 'from-red-600'); btnSubmit.classList.replace('to-emerald-400', 'to-orange-500'); btnSubmit.disabled = false; carregarGastos(); }, 1500);
-        }).catch(() => { alert('Erro na conexão.'); btnSubmit.innerHTML = textoOriginal; btnSubmit.disabled = false; });
+        }).catch(() => { mostrarToast('Erro na conexão', 'erro'); btnSubmit.innerHTML = textoOriginal; btnSubmit.disabled = false; });
     }
 
     function atualizarGasto(e) {
@@ -556,8 +628,9 @@
         .then(res => { if (!res.ok) throw new Error('Falha na requisição'); return res.json(); })
         .then(() => {
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Atualizado!'; btn.classList.replace('bg-orange-600', 'bg-emerald-500');
+            mostrarToast('Despesa atualizada', 'sucesso');
             setTimeout(() => { fecharModalStatusGasto(); btn.innerHTML = txtOriginal; btn.classList.replace('bg-emerald-500', 'bg-orange-600'); btn.disabled = false; carregarGastos(); }, 1500);
-        }).catch(() => { alert('Erro na conexão.'); btn.innerHTML = txtOriginal; btn.disabled = false; });
+        }).catch(() => { mostrarToast('Erro na conexão', 'erro'); btn.innerHTML = txtOriginal; btn.disabled = false; });
     }
 
     function excluirGasto() {
@@ -575,8 +648,9 @@
         .then(res => { if (!res.ok) throw new Error('Falha na requisição'); return res.json(); })
         .then(() => {
             btn.innerHTML = '<i class="fa-solid fa-check"></i> Excluído!'; btn.classList.replace('text-red-500', 'text-white'); btn.classList.replace('bg-red-600/20', 'bg-red-600');
+            mostrarToast('Despesa excluída', 'sucesso');
             setTimeout(() => { fecharModalStatusGasto(); btn.innerHTML = txtOriginal; btn.classList.replace('text-white', 'text-red-500'); btn.classList.replace('bg-red-600', 'bg-red-600/20'); btn.disabled = false; document.getElementById('statusActionGasto').value = 'update'; carregarGastos(); }, 1500);
-        }).catch(() => { alert('Erro na conexão.'); btn.innerHTML = txtOriginal; btn.disabled = false; });
+        }).catch(() => { mostrarToast('Erro na conexão', 'erro'); btn.innerHTML = txtOriginal; btn.disabled = false; });
     }
 
     window.onload = carregarGastos;
