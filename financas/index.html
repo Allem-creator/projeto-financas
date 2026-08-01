@@ -605,12 +605,14 @@
                     <h2 class="text-xl md:text-2xl font-extrabold text-white kpi-valor" id="kpiAgendadoValor" data-raw="0">${formatMoeda(0)}</h2>
                 </div>
 
-                <div class="glass-card kpi-card rounded-2xl p-4 md:p-5 border-l-4 border-yellow-300 bg-yellow-400/20 cursor-pointer group hover:bg-yellow-400/30 transition-colors shadow-[0_0_15px_rgba(253,224,71,0.15)] text-yellow-300" onclick="abrirModalExtrato('concluido')">
-                    <div class="flex justify-between items-start mb-1">
+                <div class="glass-card kpi-card rounded-2xl p-4 md:p-5 border-l-4 border-yellow-300 bg-yellow-400/20 cursor-pointer group hover:bg-yellow-400/30 transition-colors shadow-[0_0_15px_rgba(253,224,71,0.15)] text-yellow-300 flex flex-col justify-between" onclick="abrirModalExtrato('concluido')">
+                    <div class="flex justify-between items-start mb-1 relative z-10">
                         <p class="text-yellow-300 text-[9px] md:text-[10px] font-bold uppercase tracking-widest"><i class="fa-solid fa-hourglass-half mr-1"></i> A Receber (Concluído)</p>
                     </div>
-                    <h2 class="text-xl md:text-2xl font-extrabold text-white kpi-valor" id="kpiConcluidoValor" data-raw="0">${formatMoeda(0)}</h2>
-                    <div class="mt-3 text-[8px] md:text-[9px] text-yellow-200/80 font-medium tracking-widest uppercase flex justify-between items-center border-t border-yellow-400/30 pt-2">
+                    <div class="relative z-10">
+                        <h2 class="text-xl md:text-2xl font-extrabold text-white kpi-valor" id="kpiConcluidoValor" data-raw="0">${formatMoeda(0)}</h2>
+                    </div>
+                    <div class="mt-3 text-[8px] md:text-[9px] text-yellow-200/80 font-medium tracking-widest uppercase flex justify-between items-center border-t border-yellow-400/30 pt-2 relative z-10">
                         <span>Ver Pendentes</span><i class="fa-solid fa-arrow-pointer animate-pulse"></i>
                     </div>
                 </div>
